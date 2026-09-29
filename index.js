@@ -862,6 +862,23 @@ module.exports = function (app) {
     return { restartRequested: false }
   }
 
+  function hasNmea2000Source () {
+    if (typeof app.getPath !== 'function') return false
+    try {
+      const sources = app.getPath('/sources')
+      if (!sources || typeof sources !== 'object') return false
+      return Object.values(sources).some(source => {
+        if (!source || typeof source !== 'object') return false
+        if (source.type === 'NMEA2000') return true
+        return Object.values(source).some(value =>
+          value && typeof value === 'object' && value.type === 'NMEA2000'
+        )
+      })
+    } catch (_) {
+      return false
+    }
+  }
+
   const plugin = {
     id: PLUGIN_ID,
     name: 'CZone Circuits',
@@ -913,14 +930,23 @@ module.exports = function (app) {
       nmeaReadyRetryCount = 0
       if (app.isNmea2000OutAvailable === true) {
         ready('plugin start')
+      } else if (hasNmea2000Source()) {
+        // Some Signal K / Venus OS combinations can expose the active N2K
+        // source to plugins without updating the plugin's shallow
+        // app.isNmea2000OutAvailable snapshot or delivering the one-shot
+        // readiness event after the plugin listener is attached. The same
+        // canboatjs connection handles both NMEA 2000 input and output, so
+        // an active NMEA2000 source is a safe compatibility fallback.
+        ready('active NMEA 2000 source detected')
       } else {
         nmeaReadyRetryTimer = setInterval(() => {
           if (app.isNmea2000OutAvailable === true) return ready('startup readiness check')
+          if (hasNmea2000Source()) return ready('active NMEA 2000 source detected')
           nmeaReadyRetryCount += 1
           if (nmeaReadyRetryCount >= NMEA_READY_RETRY_LIMIT) {
             clearInterval(nmeaReadyRetryTimer)
             nmeaReadyRetryTimer = null
-            log(`NMEA 2000 output readiness check ended after ${NMEA_READY_RETRY_LIMIT} attempts; waiting for nmea2000OutAvailable event`)
+            log(`NMEA 2000 output readiness check ended after ${NMEA_READY_RETRY_LIMIT} attempts; waiting for nmea2000OutAvailable event or an active NMEA 2000 source`)
           }
         }, NMEA_READY_RETRY_MS)
       }
