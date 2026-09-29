@@ -1,0 +1,39 @@
+{
+  "name": "signalk-czone-circuits",
+  "version": "0.1.0-beta.3",
+  "description": "Signal K CZone circuit control using dynamically parsed ZCF configuration and Signal K NMEA 2000 output",
+  "main": "index.js",
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-plugin",
+    "signalk-plugin-configurator",
+    "czone",
+    "nmea2000",
+    "circuits",
+    "switching",
+    "signalk-webapp",
+    "signalk-category-digital-switching"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "index.js",
+    "lib/",
+    "public/",
+    "test/",
+    "README.md",
+    "LICENSE"
+  ],
+  "signalk": {
+    "displayName": "CZone Circuits",
+    "appIcon": "./icon.png",
+    "screenshots": []
+  },
+  "author": "svSugarShack <matt@ick.com>",
+  "signalk-plugin-enabled-by-default": true,
+  "scripts": {
+    "test": "node test/nmea.test.js && node test/zcf.test.js && node test/zcf-regression.test.js && node test/write.test.js && node test/circuit-status.test.js && node test/state.test.js && node test/config-network.test.js"
+  }
+}
