@@ -24,7 +24,14 @@ for (const [filename, vesselName, expectedCount] of cases) {
 
 const testBench = zcf.load(path.join(__dirname, 'fixtures', 'TestBench.zcf'))
 assert(testBench.modules.some(m => m.module === 0x01 && m.name === 'Output Interface'))
-assert(testBench.modules.some(m => m.module === 0x18 && m.name === 'Buzzer'))
+assert(!testBench.modules.some(m => m.module === 0x18 && m.name === 'Buzzer'))
+assert(testBench.modules.some(m => m.module === 0x10 && m.name === 'Display'))
+assert(testBench.modules.find(m => m.module === 0x10).rawNameLength === 0x87)
+const sugar = zcf.load(path.join(__dirname, 'fixtures', 'SugarShack-20260927-01.zcf'))
+for (const [module, name] of [[0x1d, 'B&G PortHelm'], [0x07, 'B&G Screen'], [0x27, 'B&G StbdHelm'], [0xf8, 'ACOI 01 Stbd Aft'], [0x80, 'STBD Helm KeyPad']]) {
+  assert(sugar.modules.some(m => m.module === module && m.name === name), `Sugar Shack module 0x${module.toString(16)} ${name} must be parsed`)
+}
+assert.strictEqual(sugar.moduleAddresses.includes(0x01), false)
 assert.deepStrictEqual(
   testBench.circuits.map(c => [c.name, c.module, c.channel, c.zcfCircuitId]),
   [

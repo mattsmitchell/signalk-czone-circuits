@@ -43,20 +43,22 @@ assert(putHandlers.has(pianoState))
 
 let result = putHandlers.get(galleyBrightness)('vessels.self', galleyBrightness, 0.5, () => {})
 assert.deepStrictEqual(result, { state: 'COMPLETED', statusCode: 200 })
-assert(emitted.at(-1).endsWith(',27,99,1b,00,32,05,fc,08'))
+assert(emitted.at(-1).endsWith(',27,99,1b,00,32,01,fc,08'))
 assert(emitted.length >= 3)
-assert(emitted.at(-3).endsWith(',27,99,1b,00,00,05,f5,08'))
-assert(emitted.at(-2).endsWith(',27,99,1b,00,00,05,43,08'))
+assert(emitted.at(-4).endsWith(',27,99,1b,00,00,01,f5,08'))
+assert(emitted.at(-3).endsWith(',27,99,1b,00,00,01,95,08'))
+assert(emitted.at(-2).endsWith(',27,99,1b,00,00,01,43,08'))
 
 result = putHandlers.get(galleyState)('vessels.self', galleyState, true, () => {})
 assert.deepStrictEqual(result, { state: 'COMPLETED', statusCode: 200 })
-assert(emitted.at(-2).endsWith(',27,99,1b,00,00,05,f5,08'))
-assert(emitted.at(-1).endsWith(',27,99,1b,00,00,05,43,08'))
+assert(emitted.at(-3).endsWith(',27,99,1b,00,00,01,f5,08'))
+assert(emitted.at(-2).endsWith(',27,99,1b,00,00,01,95,08'))
+assert(emitted.at(-1).endsWith(',27,99,1b,00,00,01,43,08'))
 
 result = putHandlers.get(pianoState)('vessels.self', pianoState, true, () => {})
 assert.deepStrictEqual(result, { state: 'COMPLETED', statusCode: 200 })
-assert(emitted.at(-2).endsWith(',27,99,35,00,00,05,f1,08'))
-assert(emitted.at(-1).endsWith(',27,99,35,00,00,05,40,08'))
+assert(emitted.at(-2).endsWith(',27,99,35,00,00,01,f1,08'))
+assert(emitted.at(-1).endsWith(',27,99,35,00,00,01,40,08'))
 
 result = putHandlers.get(galleyBrightness)('vessels.self', galleyBrightness, 1.2, () => {})
 assert.strictEqual(result.statusCode, 400)
@@ -69,7 +71,7 @@ assert(putHandlers.has(modeActivePath))
 
 result = putHandlers.get(modeActivePath)('vessels.self', modeActivePath, 'nightCruising', () => {})
 assert.deepStrictEqual(result, { state: 'COMPLETED', statusCode: 200 })
-assert(emitted.at(-1).endsWith(',27,99,4d,00,00,05,f1,08'))
+assert(emitted.at(-1).endsWith(',27,99,4d,00,00,01,f1,08'))
 
 
 

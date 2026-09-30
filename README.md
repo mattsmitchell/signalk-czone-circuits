@@ -3,12 +3,27 @@
 Signal K control plugin for CZone circuits and Modes using a dynamically parsed
 CZone ZCF configuration.
 
-**Current release:** `0.1.0-beta.12`
+**Current release:** `0.1.0-beta.14`
 
 > **Beta status:** This project is an active reverse-engineering and field-testing
 > project. The ZCF parser has been broadened and regression-tested against multiple
 > CZone configurations, but some control mappings remain provisional until they are
 > exercised against the corresponding live CZone system.
+
+## Beta 14
+
+Beta 14 tightens CZone device discovery and command sequencing based on additional ZCF and
+Wireless Interface observations. The module parser now reads only the bounded module table immediately
+after the length-prefixed vessel/configuration name. It masks the high bit of module-name length bytes
+and accepts the observed third record byte values instead of requiring zero. This captures real devices
+including the Bench Display and Sugar Shack B&G displays, ACOI, and STBD Helm KeyPad without counting
+circuit or Mode records as devices.
+
+The automatically selected command device ID is therefore the lowest address not present in the actual
+ZCF module table. Circuit and Mode commands continue to use trailer `0x08`. Webapp circuit ON/OFF
+commands now use the same multi-frame sequences as Signal K PUT handlers, including the `0x40`
+completion frame for ordinary circuits. Dimmable ON now follows the observed Wireless Interface
+sequence `F5 95 43`; dimmable OFF remains `F5 95 42`.
 
 ## Beta 13
 

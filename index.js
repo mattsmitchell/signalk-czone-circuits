@@ -1181,20 +1181,32 @@ module.exports = function (app) {
       router.post('/circuits/:name/on', (req, res) => {
         try {
           const circuit = circuitByName(req.params.name)
-          const data = czone.on(requireProtocolId(circuit), commandDeviceId(), 0x08)
-          const line = emitCommand(circuit, data, 'ON')
+          const deviceId = commandDeviceId()
+          const commands = circuit.capabilities.dimmer
+            ? czone.dimmerOn(requireProtocolId(circuit), deviceId, 0x08)
+            : [
+                czone.on(requireProtocolId(circuit), deviceId, 0x08),
+                czone.switchComplete(requireProtocolId(circuit), deviceId, 0x08)
+              ]
+          const lines = emitCommandSequence(circuit, commands, 'ON')
           const state = runtimeState.get(circuit.name)
-          res.json({ ok: true, circuit: circuit.name, line, state })
+          res.json({ ok: true, circuit: circuit.name, line: lines.at(-1), lines, state })
         } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
       })
 
       router.post('/circuits/:name/off', (req, res) => {
         try {
           const circuit = circuitByName(req.params.name)
-          const data = czone.off(requireProtocolId(circuit), commandDeviceId(), 0x08)
-          const line = emitCommand(circuit, data, 'OFF')
+          const deviceId = commandDeviceId()
+          const commands = circuit.capabilities.dimmer
+            ? czone.dimmerOff(requireProtocolId(circuit), deviceId, 0x08)
+            : [
+                czone.off(requireProtocolId(circuit), deviceId, 0x08),
+                czone.switchComplete(requireProtocolId(circuit), deviceId, 0x08)
+              ]
+          const lines = emitCommandSequence(circuit, commands, 'OFF')
           const state = runtimeState.get(circuit.name)
-          res.json({ ok: true, circuit: circuit.name, line, state })
+          res.json({ ok: true, circuit: circuit.name, line: lines.at(-1), lines, state })
         } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
       })
 
@@ -1202,10 +1214,21 @@ module.exports = function (app) {
         try {
           const circuit = circuitByName(req.params.name)
           const percent = Number(req.body && req.body.percent)
-          const data = czone.level(requireProtocolId(circuit), percent, commandDeviceId(), 0x08)
-          const line = emitCommand(circuit, data, `LEVEL ${Math.round(percent)}%`)
-          const state = runtimeState.get(circuit.name)
-          res.json({ ok: true, circuit: circuit.name, line, state })
+          if (circuit.capabilities.dimmer) {
+            const commands = []
+            const state = runtimeState.get(circuit.name)
+            if (!state || state.state !== 'ON') {
+              commands.push(...czone.dimmerOn(requireProtocolId(circuit), commandDeviceId(), 0x08))
+            }
+            commands.push(czone.level(requireProtocolId(circuit), percent, commandDeviceId(), 0x08))
+            const lines = emitCommandSequence(circuit, commands, `LEVEL ${Math.round(percent)}%${commands.length > 1 ? ' + ON' : ''}`)
+            res.json({ ok: true, circuit: circuit.name, line: lines.at(-1), lines, state: runtimeState.get(circuit.name) })
+          } else {
+            const data = czone.level(requireProtocolId(circuit), percent, commandDeviceId(), 0x08)
+            const line = emitCommandSequence(circuit, [data], `LEVEL ${Math.round(percent)}%`)
+            const state = runtimeState.get(circuit.name)
+            res.json({ ok: true, circuit: circuit.name, line: line.at(-1), lines: line, state })
+          }
         } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
       })
     }
