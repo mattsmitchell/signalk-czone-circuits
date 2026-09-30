@@ -124,8 +124,41 @@
     .connection i { width:8px; height:8px; border-radius:50%; background:#ffb84d; }
     .connection.ok i { background:var(--green); box-shadow:0 0 10px rgba(49,213,138,.6); }
     .mobile-menu { display:none; }
-    @media (max-width: 1180px) { .app { grid-template-columns:215px minmax(0,1fr); } .rightbar { display:none; } }
-    @media (max-width: 780px) { .app { display:block; } .sidebar { position:static; height:auto; padding:10px 12px; border-right:0; border-bottom:1px solid var(--line); } .brand { padding-bottom:10px; } .nav, .category-nav, .separator, .section-label { display:none; } .mobile-menu { display:flex; gap:7px; overflow:auto; padding:4px 0; } .mobile-menu button { flex:0 0 auto; } .main { padding:12px; } .hero { padding:21px; } .hero h1 { font-size:25px; } .section-head { flex-wrap:wrap; } .section-head .search { margin-left:auto; flex:1 1 180px; min-width:180px; max-width:none; } .section-head .sort { margin-left:auto; } .circuit { grid-template-columns:30px minmax(0,1fr) auto; } .tags { display:none; } .status { display:none; } .control { grid-column:2 / 4; justify-content:stretch; } .range-wrap { flex:1; } }
+    /* Responsive layout: keep every panel visible as the viewport narrows.
+       Wide: three columns. Medium: the former right well moves beneath the left well.
+       Narrow: navigation/status stack above the circuit list. */
+    @media (max-width: 1180px) {
+      .app { grid-template-columns:215px minmax(0,1fr); align-items:start; }
+      .sidebar { grid-column:1; grid-row:1; }
+      .main { grid-column:2; grid-row:1 / span 2; }
+      .rightbar { grid-column:1; grid-row:2; position:static; height:auto; overflow:visible; border-left:0; border-right:1px solid var(--line); padding:0 16px 22px; }
+      .right-card:last-child { margin-bottom:0; }
+    }
+    @media (max-width: 780px) {
+      .app { display:grid; grid-template-columns:minmax(0,1fr); align-items:stretch; }
+      .sidebar { grid-column:1; grid-row:1; position:static; height:auto; padding:10px 12px; border-right:0; border-bottom:1px solid var(--line); }
+      .rightbar { grid-column:1; grid-row:2; position:static; height:auto; padding:0 12px 12px; border-right:0; border-bottom:1px solid var(--line); }
+      .main { grid-column:1; grid-row:3; padding:12px; }
+      .brand { padding-bottom:10px; }
+      .nav { display:grid; }
+      .category-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+      .separator, .section-label { display:block; }
+      .category-nav .category-card { min-height:58px; padding:9px; }
+      .category-nav .category-card .cat-icon { width:30px; height:30px; flex-basis:30px; }
+      .right-card { margin-bottom:10px; }
+      .right-card:last-child { margin-bottom:0; }
+      .main > .connection { display:none; }
+      .hero { padding:21px; }
+      .hero h1 { font-size:25px; }
+      .section-head { flex-wrap:wrap; }
+      .section-head .search { margin-left:auto; flex:1 1 180px; min-width:180px; max-width:none; }
+      .section-head .sort { margin-left:auto; }
+      .circuit { grid-template-columns:30px minmax(0,1fr) auto; }
+      .tags { display:none; }
+      .status { display:none; }
+      .control { grid-column:2 / 4; justify-content:stretch; }
+      .range-wrap { flex:1; }
+    }
   </style>
 </head>
 <body>

@@ -1,7 +1,9 @@
 {
   "name": "signalk-czone-circuits",
-  "version": "0.1.0-beta.4",
+  "version": "0.1.0-beta.5",
   "description": "Signal K CZone circuit control using dynamically parsed ZCF configuration and Signal K NMEA 2000 output",
+  "author": "svSugarShack <matt@ick.com>",
+  "signalk-plugin-enabled-by-default": true,
   "main": "index.js",
   "keywords": [
     "signalk-node-server-plugin",
