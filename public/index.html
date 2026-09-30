@@ -142,26 +142,27 @@
       .right-card:last-child { margin-bottom:0; }
     }
     @media (max-width: 780px) {
-      /* Super-narrow screens become a deliberate top-to-bottom workflow:
-         branding -> hero -> modes -> filters -> circuits -> status. */
+      /* Super-narrow screens use a deliberate top-to-bottom workflow:
+         branding -> hero -> modes -> filters -> circuits -> status.  The
+         wrappers become transparent so the major pieces can be ordered
+         independently without changing the desktop/medium structure. */
       .app { display:grid; grid-template-columns:minmax(0,1fr); align-items:stretch; }
-      .leftwell { display:contents; }
-      .sidebar { grid-column:1; grid-row:auto; position:static; height:auto; padding:10px 12px 0; border-right:0; border-bottom:0; }
-      .rightbar { display:contents; }
-      .main { display:contents; }
-      .brand { padding-bottom:10px; }
-      .nav { display:grid; }
-      .category-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
-      .separator, .section-label { display:block; }
+      .leftwell, .sidebar, .rightbar, .main { display:contents; }
+      .brand { grid-column:1; order:1; padding:10px 22px 0; }
+      .hero { grid-column:1; order:2; margin:12px 12px 0; padding:21px; }
+      .hero h1 { font-size:25px; }
+      .modes-card { grid-column:1; order:3; margin:12px 12px 0; }
+      .nav { grid-column:1; order:4; display:grid; margin:12px 12px 0; }
+      .sidebar > .separator:nth-of-type(3) { grid-column:1; order:5; margin:10px 19px 8px; }
+      .section-label { grid-column:1; order:6; margin:0 12px; }
+      .category-nav { grid-column:1; order:7; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin:0 12px; }
+      .sidebar > .separator:nth-of-type(6) { grid-column:1; order:8; margin:10px 19px 0; }
+      .section { grid-column:1; order:9; margin:12px 12px 0; }
+      .overview-card { grid-column:1; order:10; margin:12px 12px 0; }
+      .rightbar > .right-card:last-child { grid-column:1; order:11; margin:12px 12px 12px; }
+      .main > .connection { display:none; }
       .category-nav .category-card { min-height:58px; padding:9px; }
       .category-nav .category-card .cat-icon { width:30px; height:30px; flex-basis:30px; }
-      .hero { grid-column:1; grid-row:auto; margin:12px 12px 0; padding:21px; }
-      .hero h1 { font-size:25px; }
-      .modes-card { grid-column:1; grid-row:auto; margin:12px 12px 0; }
-      .overview-card { grid-column:1; grid-row:auto; margin:12px 12px 0; }
-      .rightbar > .right-card:last-child { margin:12px 12px 12px; }
-      .main > .connection { display:none; }
-      .section { grid-column:1; grid-row:auto; margin:12px 12px 0; }
       .section-head { flex-wrap:wrap; }
       .section-head .search { margin-left:auto; flex:1 1 180px; min-width:180px; max-width:none; }
       .section-head .sort { margin-left:auto; }
@@ -170,6 +171,14 @@
       .status { display:none; }
       .control { grid-column:2 / 4; justify-content:stretch; }
       .range-wrap { flex:1; }
+    }
+
+    @media (min-width: 781px) and (max-width: 1180px) {
+      /* Medium widths have less horizontal room for the decorative ACTIVE
+         label. Let long mode names use the full button width and wrap safely. */
+      .mode-name { min-width:0; }
+      .mode-name > span:first-child { min-width:0; overflow-wrap:anywhere; }
+      .mode-name > span:last-child { display:none; }
     }
   </style>
 </head>
