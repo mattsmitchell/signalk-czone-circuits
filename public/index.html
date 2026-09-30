@@ -32,6 +32,10 @@
     button, input { font: inherit; }
     button { color: inherit; }
     .app { display: grid; grid-template-columns: 250px minmax(0, 1fr) 285px; min-height: 100vh; }
+    .leftwell { display: contents; }
+    .sidebar { grid-column:1; grid-row:1; }
+    .main { grid-column:2; grid-row:1; }
+    .rightbar { grid-column:3; grid-row:1; }
     .sidebar, .rightbar { background: rgba(5, 16, 29, .78); backdrop-filter: blur(18px); border-color: var(--line); }
     .sidebar { border-right: 1px solid var(--line); padding: 22px 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
     .rightbar { border-left: 1px solid var(--line); padding: 22px 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
@@ -128,17 +132,22 @@
        Wide: three columns. Medium: the former right well moves beneath the left well.
        Narrow: navigation/status stack above the circuit list. */
     @media (max-width: 1180px) {
-      .app { grid-template-columns:215px minmax(0,1fr); align-items:start; }
-      .sidebar { grid-column:1; grid-row:1; }
-      .main { grid-column:2; grid-row:1 / span 2; }
-      .rightbar { grid-column:1; grid-row:2; position:static; height:auto; overflow:visible; border-left:0; border-right:1px solid var(--line); padding:0 16px 22px; }
+      /* Medium screens: the left navigation and former right well become one
+         independent vertical column. The circuit list remains in its own
+         document flow, so the right well never waits on the circuit list. */
+      .app { grid-template-columns:215px minmax(0,1fr); align-items:stretch; }
+      .leftwell { grid-column:1; grid-row:1; display:flex; flex-direction:column; min-height:100vh; height:100vh; position:sticky; top:0; overflow-y:auto; overflow-x:hidden; scrollbar-gutter:stable; }
+      .sidebar { position:static; height:auto; overflow:visible; flex:0 0 auto; }
+      .rightbar { position:static; height:auto; overflow:visible; flex:0 0 auto; border-left:0; border-right:1px solid var(--line); padding:0 16px 22px; }
+      .main { grid-column:2; grid-row:1; min-height:100vh; }
       .right-card:last-child { margin-bottom:0; }
     }
     @media (max-width: 780px) {
       .app { display:grid; grid-template-columns:minmax(0,1fr); align-items:stretch; }
-      .sidebar { grid-column:1; grid-row:1; position:static; height:auto; padding:10px 12px; border-right:0; border-bottom:1px solid var(--line); }
-      .rightbar { grid-column:1; grid-row:2; position:static; height:auto; padding:0 12px 12px; border-right:0; border-bottom:1px solid var(--line); }
-      .main { grid-column:1; grid-row:3; padding:12px; }
+      .leftwell { grid-column:1; grid-row:1; display:block; position:static; height:auto; min-height:0; overflow:visible; }
+      .sidebar { grid-column:auto; grid-row:auto; position:static; height:auto; padding:10px 12px; border-right:0; border-bottom:1px solid var(--line); }
+      .rightbar { grid-column:auto; grid-row:auto; position:static; height:auto; padding:0 12px 12px; border-right:0; border-bottom:1px solid var(--line); }
+      .main { grid-column:1; grid-row:2; padding:12px; min-height:0; }
       .brand { padding-bottom:10px; }
       .nav { display:grid; }
       .category-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
@@ -163,6 +172,7 @@
 </head>
 <body>
   <div class="app">
+    <div class="leftwell">
     <aside class="sidebar">
       <div class="brand"><img class="brand-mark" src="icon.png" alt="CZone" width="38" height="38"><div><strong>CZone</strong><span>Boat Systems</span></div></div>
       <div class="nav" id="mainNav"></div>
@@ -171,6 +181,13 @@
       <div class="category-nav" id="categoryNav"></div>
       <div class="separator"></div>
     </aside>
+
+    <aside class="rightbar">
+      <div class="right-card"><h3>System Overview</h3><div id="stats"></div></div>
+      <div class="right-card"><h3>Modes</h3><div id="modes" class="mode-grid"></div></div>
+      <div class="right-card"><h3>Connection</h3><div id="connectionCard"></div></div>
+    </aside>
+    </div>
 
     <main class="main">
       <div class="connection" id="connection"><i></i><span>Connecting to Signal K…</span></div>
@@ -184,11 +201,6 @@
       </section>
     </main>
 
-    <aside class="rightbar">
-      <div class="right-card"><h3>System Overview</h3><div id="stats"></div></div>
-      <div class="right-card"><h3>Modes</h3><div id="modes" class="mode-grid"></div></div>
-      <div class="right-card"><h3>Connection</h3><div id="connectionCard"></div></div>
-    </aside>
   </div>
 <script>
 (() => {
