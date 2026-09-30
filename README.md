@@ -3,12 +3,21 @@
 Signal K control plugin for CZone circuits and Modes using a dynamically parsed
 CZone ZCF configuration.
 
-**Current release:** `0.1.0-beta.14`
+**Current release:** `0.1.0-beta.15`
 
 > **Beta status:** This project is an active reverse-engineering and field-testing
 > project. The ZCF parser has been broadened and regression-tested against multiple
 > CZone configurations, but some control mappings remain provisional until they are
 > exercised against the corresponding live CZone system.
+
+## Beta 15
+
+- Added a second ZCF circuit-status mapping parser for the Bench/TestBench load-table layout.
+- Load records are decoded as `[mask:4-byte little-endian][name length][name][output #][module]` and are located from the `64 00` load-table marker.
+- The full load mask is retained as `statusMask`; legacy ZCF status records continue to use their single-bit mapping.
+- A logical circuit uses the load record with the same name, so TestBench Light 5 maps to module `0x01`, mask `0x10`, while the companion Buzzer load remains `0x20`.
+- PGN 65284 state decoding now uses `statusMask` when present, allowing Light 5 to report correctly from the observed `0x30` bitmap without treating the Buzzer bit as part of Light 5.
+- Added a TestBench regression fixture test covering Light 1-5 masks and module mapping.
 
 ## Beta 14
 

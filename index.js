@@ -554,11 +554,21 @@ module.exports = function (app) {
     log(`CZone STATE IN: PGN 65284 src=${frame.source} module=0x${module.toString(16).padStart(2, '0')} subtype=0x${statusSubtype.toString(16).padStart(2, '0')} bitmap=0x${bitmap.toString(16).padStart(8, '0')} data=${data.toString('hex').toUpperCase()}`)
 
     for (const circuit of mapping.circuits) {
-      if (Number(circuit.statusModule) !== module ||
-          !Number.isInteger(circuit.statusBit) ||
-          circuit.statusBit < 0 || circuit.statusBit > 31) continue
+      if (Number(circuit.statusModule) !== module) continue
 
-      const enabled = ((bitmap >>> circuit.statusBit) & 1) !== 0
+      // Most ZCF families map a circuit to one status bit. TestBench uses a
+      // load-table mask instead; prefer the full mask when present so a
+      // logical circuit can deliberately select one load from a multi-load
+      // output group (for example Light 5 uses mask 0x10 even though the
+      // physical output bitmap reports 0x30 with its companion Buzzer load).
+      let enabled
+      if (Number.isInteger(circuit.statusMask) && circuit.statusMask > 0) {
+        enabled = (bitmap & (circuit.statusMask >>> 0)) !== 0
+      } else if (Number.isInteger(circuit.statusBit) && circuit.statusBit >= 0 && circuit.statusBit <= 31) {
+        enabled = ((bitmap >>> circuit.statusBit) & 1) !== 0
+      } else {
+        continue
+      }
       const state = runtimeState.get(circuit.name)
       if (state) {
         state.statusObserved = true
@@ -571,7 +581,7 @@ module.exports = function (app) {
 
       const stateSource = signalk.nmea2000Source(frame.source, frame.pgn)
       const observedState = enabled ? 'ON' : 'OFF'
-      log(`CZone STATE: ${circuit.name} -> ${observedState} (runtime ${Number(circuit.statusModule).toString(16).padStart(2, '0')}:${circuit.statusBit}, src=${frame.source})`)
+      log(`CZone STATE: ${circuit.name} -> ${observedState} (runtime ${Number(circuit.statusModule).toString(16).padStart(2, '0')}:${Number(circuit.statusMask).toString(16).padStart(8, '0')}, src=${frame.source})`)
       const published = publishCircuitDelta(circuit, signalk.statePath(circuit), enabled, stateSource)
       if (published) {
         log(`CZone STATE PUBLISHED: ${signalk.statePath(circuit)}=${observedState} source=${JSON.stringify(stateSource)}`)
