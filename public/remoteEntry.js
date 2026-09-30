@@ -216,9 +216,9 @@ var signalk_czone_circuits = (function () {
       React.createElement('div', { style: { marginBottom: 14, padding: 12, border: '1px solid #ccc', borderRadius: 6 } },
         React.createElement('label', null,
           React.createElement('input', { type: 'checkbox', checked: configuration.enableSending === true, disabled: busy, onChange: function (e) { setSending(e.target.checked) } }),
-          ' Enable NMEA 2000 sending'
+          ' Allow this plugin to send NMEA 2000 messages'
         ),
-        React.createElement('div', { style: { marginTop: 6, fontSize: 12 } }, 'Safety interlock: when disabled, this plugin will not transmit CZone circuit or Mode control messages.')
+        React.createElement('div', { style: { marginTop: 6, fontSize: 12 } }, 'When enabled, the plugin can send CZone circuit and Mode control PGNs to your NMEA 2000 network.')
       ),
 
       current ? React.createElement('div', { style: { fontSize: 12 } }, 'Currently loaded: ' + (current.vesselName || current.fileName) + ' · ' + current.circuits + ' circuits · ' + current.modes + ' modes') : null,
