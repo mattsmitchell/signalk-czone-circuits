@@ -132,9 +132,8 @@
        Wide: three columns. Medium: the former right well moves beneath the left well.
        Narrow: navigation/status stack above the circuit list. */
     @media (max-width: 1180px) {
-      /* Medium screens: the left navigation and former right well become one
-         independent vertical column. The circuit list remains in its own
-         document flow, so the right well never waits on the circuit list. */
+      /* Medium screens: the left navigation and status/actions are one independent
+         scrolling column. The circuit area remains in its own document column. */
       .app { grid-template-columns:215px minmax(0,1fr); align-items:stretch; }
       .leftwell { grid-column:1; grid-row:1; display:flex; flex-direction:column; min-height:100vh; height:100vh; position:sticky; top:0; overflow-y:auto; overflow-x:hidden; scrollbar-gutter:stable; }
       .sidebar { position:static; height:auto; overflow:visible; flex:0 0 auto; }
@@ -143,22 +142,26 @@
       .right-card:last-child { margin-bottom:0; }
     }
     @media (max-width: 780px) {
+      /* Super-narrow screens become a deliberate top-to-bottom workflow:
+         branding -> hero -> modes -> filters -> circuits -> status. */
       .app { display:grid; grid-template-columns:minmax(0,1fr); align-items:stretch; }
-      .leftwell { grid-column:1; grid-row:1; display:block; position:static; height:auto; min-height:0; overflow:visible; }
-      .sidebar { grid-column:auto; grid-row:auto; position:static; height:auto; padding:10px 12px; border-right:0; border-bottom:1px solid var(--line); }
-      .rightbar { grid-column:auto; grid-row:auto; position:static; height:auto; padding:0 12px 12px; border-right:0; border-bottom:1px solid var(--line); }
-      .main { grid-column:1; grid-row:2; padding:12px; min-height:0; }
+      .leftwell { display:contents; }
+      .sidebar { grid-column:1; grid-row:auto; position:static; height:auto; padding:10px 12px 0; border-right:0; border-bottom:0; }
+      .rightbar { display:contents; }
+      .main { display:contents; }
       .brand { padding-bottom:10px; }
       .nav { display:grid; }
       .category-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
       .separator, .section-label { display:block; }
       .category-nav .category-card { min-height:58px; padding:9px; }
       .category-nav .category-card .cat-icon { width:30px; height:30px; flex-basis:30px; }
-      .right-card { margin-bottom:10px; }
-      .right-card:last-child { margin-bottom:0; }
-      .main > .connection { display:none; }
-      .hero { padding:21px; }
+      .hero { grid-column:1; grid-row:auto; margin:12px 12px 0; padding:21px; }
       .hero h1 { font-size:25px; }
+      .modes-card { grid-column:1; grid-row:auto; margin:12px 12px 0; }
+      .overview-card { grid-column:1; grid-row:auto; margin:12px 12px 0; }
+      .rightbar > .right-card:last-child { margin:12px 12px 12px; }
+      .main > .connection { display:none; }
+      .section { grid-column:1; grid-row:auto; margin:12px 12px 0; }
       .section-head { flex-wrap:wrap; }
       .section-head .search { margin-left:auto; flex:1 1 180px; min-width:180px; max-width:none; }
       .section-head .sort { margin-left:auto; }
@@ -183,8 +186,8 @@
     </aside>
 
     <aside class="rightbar">
-      <div class="right-card"><h3>System Overview</h3><div id="stats"></div></div>
-      <div class="right-card"><h3>Modes</h3><div id="modes" class="mode-grid"></div></div>
+      <div class="right-card modes-card"><h3>Modes</h3><div id="modes" class="mode-grid"></div></div>
+      <div class="right-card overview-card"><h3>System Overview</h3><div id="stats"></div></div>
       <div class="right-card"><h3>Connection</h3><div id="connectionCard"></div></div>
     </aside>
     </div>
