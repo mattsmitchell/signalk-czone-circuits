@@ -1,30 +1,149 @@
-
-### Alpha.34 webapp state synchronization
-
-- Signal K WebSocket deltas are now the primary live state source for circuit `switch.state` and `switch.brightness`.
-- Removed the 5-second `/circuits` polling loop.
-- A WebSocket watchdog performs one REST `/circuits` reconciliation only after 120 seconds without a Signal K delta, then resets its timer.
-- WebSocket reconnects trigger a recovery path without creating a high-frequency polling loop.
-- Circuit commands update the UI optimistically and show a `Sending…` indicator until authoritative CZone state/brightness is observed.
-- If the command is rejected or CZone reports a different value, the UI rolls back/reconciles to the observed value.
-- The NMEA 2000/CZone command encoding is unchanged from Alpha.33.
-
-### Alpha.33 outbound switch commands
-
-- Non-dimmable ON/OFF commands now use the live-captured CZone PGN 65280 switch sequence (`F1`/`F2` with parameter `0x24`, followed by the `0x40` completion frame).
-- Dimmable circuits now use the captured CZone ON/OFF sequences (`F5` + `43` for ON; `F5` + `95` + `42` for OFF).
-- Moving a dimmer slider while the circuit is OFF first sends the CZone dimmer ON sequence, then the requested `FC` level command.
-- Debug logging records all frames in a multi-frame command sequence.
-
 # signalk-czone-circuits
 
-Signal K control plugin for CZone circuits and Modes using a dynamically uploaded
+Signal K control plugin for CZone circuits and Modes using a dynamically parsed
 CZone ZCF configuration.
 
+**Current release:** `0.1.0-beta.12`
 
-### CZone command PGN
+> **Beta status:** This project is an active reverse-engineering and field-testing
+> project. The ZCF parser has been broadened and regression-tested against multiple
+> CZone configurations, but some control mappings remain provisional until they are
+> exercised against the corresponding live CZone system.
 
-Outbound CZone circuit commands are emitted as raw NMEA 2000 PGN **65280 (0xFF00)**. Some tooling represents the same proprietary CZone family in the DP-numbered range (130816); the plugin accepts that alias when decoding input, but deliberately uses 65280 for outbound Actisense/NMEA 2000 frames because that is the on-wire PGN observed in CZone captures.
+## Beta 12 / current status
+
+Beta 12 is primarily a documentation release following the Beta 7–11 UI and
+configuration refinements. The current beta line includes:
+
+- A responsive webapp with three-column desktop, two-column medium, and a dedicated
+  super-narrow/mobile layout.
+- Desktop and medium layouts keep the Modes, System Overview, and Connection panels
+  in the right/left status well as appropriate to the viewport.
+- Super-narrow layout is deliberately ordered for small-screen use:
+  **branding → hero → Modes → filters → circuit listing → System Overview → Connection**.
+- The electric-blue abstract hero image and dynamic vessel-name title are retained.
+- The medium layout hides the decorative `ACTIVE` suffix on Mode buttons so long Mode
+  names have more room and can wrap safely. Wide and super-narrow layouts retain it.
+- The Signal K Plugin Config screen remains the configuration boundary; runtime webapp
+  controls do not duplicate the ZCF configuration controls.
+- The NMEA 2000 transmit permission is phrased directly as **Allow this plugin to send
+  NMEA 2000 messages**, with an explanation that enabling it permits CZone circuit and
+  Mode control PGNs to be sent to the NMEA 2000 network.
+- Package metadata includes the plugin author and Signal K's
+  `signalk-plugin-enabled-by-default` setting.
+
+## Beta 6 parser update
+
+Beta 6 replaced the earlier Sugar Shack-specific ZCF circuit detection with a
+structural parser based on the common circuit-record signature observed across the
+available configurations. The parser no longer assumes that valid circuit modules
+fall within the old `0x10..0x40` range (plus `0xF8`). Low module IDs are accepted when
+the surrounding record structure matches a circuit record, while module `0` is
+excluded because it is used by other ZCF tables.
+
+The circuit signature currently used includes:
+
+- channel at record offset `+4`
+- module at `+5`
+- `E8 03` marker at `+6/+7`
+- ZCF circuit/control ID at `+9`
+- circuit-name length at `+16`
+- ASCII circuit name beginning at `+17`
+
+The configuration/vessel name parser was also corrected to use the length-prefixed
+name at byte 14 rather than searching for a `}` terminator.
+
+Regression fixtures currently cover six configurations:
+
+| ZCF fixture | Circuits found | Configuration name |
+|---|---:|---|
+| TestBench | 5 | Test Bench |
+| Compass Rose | 21 | Compass Rose 28.06.26 |
+| Persevere | 59 | Persevere 14.07.25 |
+| Sel Citron | 100 | Sel Citron 02.04.25 |
+| Meitaki | 103 | Meitaki 07.04.25 |
+| Sugar Shack | 108 | Sugar Shack-20260927-01 |
+
+The parser changes are also used by the **Read From Network and Save** path: after
+CZone network DataBlock reassembly produces the complete configuration byte stream,
+the same ZCF loader is used to parse and validate the resulting configuration.
+
+This establishes generic parsing across the supplied fixtures. It does not by itself
+prove that every possible ZCF can be transferred successfully over every CZone/NMEA
+2000 network; network transport/reassembly still depends on the observed CZone
+DataBlock protocol.
+
+## Beta 1–5 UI and platform work
+
+### Beta 5 — responsive layout
+
+- Added responsive desktop, medium/tablet, and narrow/mobile layouts.
+- Medium widths use a two-column layout with the navigation/status content kept in an
+  independently scrolling left well.
+- Narrow widths stack the major interface sections instead of allowing the status well
+  to become coupled to the circuit-list height.
+- Package metadata and application assets were retained while the layout was changed.
+
+### Beta 4 — NMEA 2000 output readiness
+
+- Improved NMEA 2000 output readiness handling across Signal K/canboatjs lifecycle
+  variants while retaining the existing `app.emit('nmea2000out', line)` path.
+- The plugin does not claim or configure the NMEA 2000 source address; the active
+  canboatjs connection remains responsible for that.
+
+### Beta 3 — approved hero artwork
+
+- Added the abstract electric-blue hero background: dark navy/black field with glowing
+  blue electrical currents and branching energy-like filaments.
+- No boat, vehicle, or textual artwork is embedded in the hero image.
+
+### Beta 2 — hero image
+
+- Added a dedicated hero background image to the main webapp.
+
+### Beta 1 — vessel name and hero
+
+- The hero title uses the vessel name when available, displayed as
+  **`<vesselname>’s Circuits`**.
+- Falls back to **Your Boat, Your Circuits** when a vessel name is unavailable.
+
+## Alpha 53–47 UI and packaging work
+
+### Alpha 53
+
+- Removed the duplicate category toolbar from the center of the webapp.
+- Category navigation remains in the left well.
+- Search remains above the circuit list.
+
+### Alpha 52
+
+- Refined the main three-column interface and category navigation layout.
+
+### Alpha 51 / 50 / 49
+
+- Added the plugin icon to the package root and public webapp assets.
+- Added the Signal K `appIcon` package metadata.
+- Kept plugin configuration in the Signal K Plugin Config interface rather than placing
+  configuration controls in the normal runtime webapp.
+- Preserved the network configuration source selector and **Read From Network and Save**
+  workflow in Plugin Config.
+
+### Alpha 48
+
+- Fixed plugin startup/packaging issues identified during installation testing.
+
+### Alpha 47 baseline
+
+- Established the CZone circuit-control webapp, ZCF loading, Signal K paths, Mode
+  controls, and NMEA 2000 output work that the later beta releases build upon.
+
+## CZone command PGN
+
+Outbound CZone circuit commands are emitted as raw NMEA 2000 PGN **65280 (0xFF00)**.
+Some tooling represents the same proprietary CZone family in the DP-numbered range
+(130816); the plugin accepts that alias when decoding input, but deliberately uses 65280
+for outbound Actisense/NMEA 2000 frames because that is the on-wire PGN observed in CZone
+captures.
 
 ## Plugin boundary
 
@@ -35,18 +154,22 @@ This plugin is intentionally separate from the existing `signalk-czone` plugin:
 
 This plugin does **not** publish `electrical.czone.<circuit>.current`.
 
-## Safety interlock
+## NMEA 2000 sending safety interlock
 
-`Enable NMEA 2000 sending` defaults to **false**. No CZone control frame is emitted
-unless the administrator explicitly enables sending and Signal K reports that NMEA 2000 output is available.
+**Allow this plugin to send NMEA 2000 messages** defaults to **disabled**. No CZone control
+frame is emitted unless the administrator explicitly enables sending and Signal K reports
+that NMEA 2000 output is available.
 
-The plugin does **not** configure or claim an NMEA 2000 source address. It sends through Signal K's `nmea2000out` path and lets the active canboatjs NMEA 2000 connection own address claiming and source-address selection.
-The ZCF can still be uploaded and inspected with sending disabled.
+The plugin does **not** configure or claim an NMEA 2000 source address. It sends through
+Signal K's `nmea2000out` path and lets the active canboatjs NMEA 2000 connection own address
+claiming and source-address selection.
 
+The ZCF can still be uploaded, parsed, inspected, and used for read-only status display
+with sending disabled.
 
 ## ZCF model
 
-The supplied live ZCF contains 106 structural circuit records. Each circuit retains:
+Each parsed circuit retains:
 
 - ZCF circuit/control ID
 - module/device address
@@ -57,7 +180,7 @@ The supplied live ZCF contains 106 structural circuit records. Each circuit reta
 - protocol confidence (`capture` for sampled mappings, `zcf-derived` for provisional mappings)
 - CZone runtime status mapping (`statusModule` + `statusBit`) decoded from the ZCF status/output table
 
-The current live configuration identifies 13 dimmable circuits.
+The current Sugar Shack fixture identifies 13 dimmable circuits.
 
 Mode records retain both identifiers:
 
@@ -65,7 +188,8 @@ Mode records retain both identifiers:
 - `runtimeId`: one-byte live `27 99` control ID
 - `modeGroupId`: currently observed as `0x01`; semantic meaning is **provisional** pending a ZCF containing another Mode Group
 
-The current live ZCF contains four Modes: Anchored, Day Crusing, Night Cruising and Sleep.
+The current Sugar Shack configuration contains four Modes: Anchored, Day Crusing,
+Night Cruising and Sleep.
 
 ## Confirmed CZone control protocol
 
@@ -106,7 +230,9 @@ Mode activation is one CZone frame; the plugin does not replay the Mode action l
 ```
 
 There is no Mode OFF command in the current model. A Mode is a persistent selection;
-after system restart the plugin performs a short startup reconciliation using observed CZone circuit states. This is a fuzzy best-match fallback only; an authoritative Mode activation frame always takes precedence.
+after system restart the plugin performs a short startup reconciliation using observed
+CZone circuit states. This is a fuzzy best-match fallback only; an authoritative Mode
+activation frame always takes precedence.
 
 ## Signal K control paths
 
@@ -132,30 +258,94 @@ Mode writes accept a Mode slug or ZCF display name. A false/off value is not val
 
 Writes are treated as requests. Circuit ON/OFF state is published from CZone PGN 65284
 status bitmaps. PGN 130822 is used for DC level/brightness telemetry only and is not used
-to infer switch state from load current or brightness. A received Mode activation frame is authoritative during normal operation. After plugin startup, the plugin may publish a fuzzy best-match Mode once enough circuit-status observations have arrived. Startup inference is performed only once and does not re-evaluate the Mode when individual circuits are manually overridden.
+to infer switch state from load current or brightness. A received Mode activation frame is
+authoritative during normal operation. After plugin startup, the plugin may publish a fuzzy
+best-match Mode once enough circuit-status observations have arrived. Startup inference is
+performed only once and does not re-evaluate the Mode when individual circuits are manually
+overridden.
 
 ## ZCF upload
 
 The Signal K configuration panel provides a dedicated `.zcf` upload control similar to
 the existing `signalk-czone` plugin. The uploaded file is parsed and validated before it
-replaces the installed ZCF. A successful upload persists the configuration and restarts
-the plugin so that Signal K PUT handlers are rebuilt against the new ZCF.
+replaces the installed ZCF. A successful upload persists the configuration and restarts the
+plugin so that Signal K PUT handlers are rebuilt against the new ZCF.
 
 The installed ZCF is stored under the plugin data directory as `installation.zcf`.
 
+## Network configuration read
+
+The Plugin Config interface can explicitly request the complete CZone configuration from
+the network. This is **not** performed during Signal K startup.
+
+The **Read From Network and Save** action sends the observed CZone configuration-read
+request on PGN 65290, receives/reassembles the CZone DataBlock transfer on PGN 130816,
+acknowledges each DataBlock on PGN 65291, validates the reconstructed configuration with
+the ZCF parser, and saves the resulting raw configuration bytes using a `.czone.net`
+extension.
+
+The saved filename is based on the vessel name embedded in the received configuration
+when available, then Signal K's `vessels.self.name`, then the generic `CZone Network` name.
+A JSON sidecar records acquisition metadata. The resulting `.czone.net` file appears in
+the Plugin Config source selector and can be explicitly selected for future startup.
+Switching back to **Use installed/uploaded ZCF** is also available there.
+
+`.czone.net` is intentionally used instead of `.zcf`: the plugin has reconstructed the
+CZone configuration byte stream from the network, but does not claim to produce an
+officially sanctioned CZone configuration file.
+
+## Webapp architecture
+
+The normal runtime webapp is deliberately focused on monitoring and control. ZCF source
+selection, upload, network configuration reads, and the NMEA 2000 transmit permission live
+in the Signal K Plugin Config interface (`remoteEntry.js`).
+
+The runtime webapp receives live Signal K WebSocket deltas for circuit state and brightness.
+A long-duration WebSocket watchdog performs a REST reconciliation only after an extended
+period without a Signal K delta; it does not run a high-frequency polling loop.
+
 ## Development status
 
-The implementation is an alpha-stage reverse-engineering project. Unknown proprietary
-fields are retained rather than guessed. The generic ZCF-derived circuit control mapping
-is provisional for circuits that have not yet been individually exercised on the live bus.
-Further captures can promote mappings from `zcf-derived` to empirically verified profiles.
+The implementation is a **beta-stage reverse-engineering project**. The supplied ZCF
+fixtures demonstrate that the parser can identify circuit records across substantially
+different configurations, including configurations with low module IDs and larger circuit
+counts. Unknown proprietary fields are retained rather than guessed.
 
+Generic ZCF-derived control mappings remain provisional for circuits that have not yet been
+individually exercised on the live bus. Further captures can promote mappings from
+`zcf-derived` to empirically verified profiles.
+
+## Historical protocol notes
+
+### Alpha.34 webapp state synchronization
+
+- Signal K WebSocket deltas became the primary live state source for circuit `switch.state`
+  and `switch.brightness`.
+- Removed the 5-second `/circuits` polling loop.
+- A WebSocket watchdog performs one REST `/circuits` reconciliation only after 120 seconds
+  without a Signal K delta, then resets its timer.
+- WebSocket reconnects trigger a recovery path without creating a high-frequency polling loop.
+- Circuit commands update the UI optimistically and show a `Sending…` indicator until
+  authoritative CZone state/brightness is observed.
+- If the command is rejected or CZone reports a different value, the UI rolls back/reconciles
+  to the observed value.
+- The NMEA 2000/CZone command encoding is unchanged from Alpha.33.
+
+### Alpha.33 outbound switch commands
+
+- Non-dimmable ON/OFF commands use the live-captured CZone PGN 65280 switch sequence
+  (`F1`/`F2` with parameter `0x24`, followed by the `0x40` completion frame).
+- Dimmable circuits use the captured CZone ON/OFF sequences (`F5` + `43` for ON;
+  `F5` + `95` + `42` for OFF).
+- Moving a dimmer slider while the circuit is OFF first sends the CZone dimmer ON sequence,
+  then the requested `FC` level command.
+- Debug logging records all frames in a multi-frame command sequence.
 
 ### Alpha.24
 
-The ZCF parser now decodes the separate runtime status/output table. Each logical circuit
-can therefore carry its CZone runtime `statusModule` and `statusBit`; these are the identities
-used to decode PGN 65284. This replaces the previous assumption that the primary ZCF
+The ZCF parser decodes the separate runtime status/output table. Each logical circuit can
+therefore carry its CZone runtime `statusModule` and `statusBit`; these are the identities
+used to decode PGN 65284. This replaced the previous assumption that the primary ZCF
 module/channel (or a fixed module offset) maps directly to the 65284 bitmap.
 
 PGN 65284 is authoritative for `switch.state`. PGN 130822 supplies level/brightness
@@ -163,23 +353,49 @@ telemetry and no longer synthesizes `switch.state` from current or level.
 
 ### Alpha.21
 
-Observed ON/OFF state is sourced from CZone PGN 65284 circuit-status bitmaps. The ZCF module/slot identifies the circuit; the NMEA-2000 source address identifies the reporting CZone module. PGN 130822 remains the source for DC current/level telemetry.
+Observed ON/OFF state is sourced from CZone PGN 65284 circuit-status bitmaps. The ZCF
+module/slot identifies the circuit; the NMEA-2000 source address identifies the reporting
+CZone module. PGN 130822 remains the source for DC current/level telemetry.
 
 ### Mode observation (Alpha.42)
 
-CZone mode changes are treated as authoritative from the proprietary CZone mode transaction on PGN 65280: `27 99 <mode runtime ID> 00 00 24 F1 00`. Individual circuit state changes do not invalidate the active mode, because circuits can be overridden while a mode remains active. The following `0x40` CZone transaction-complete frame is logged when observed but is not treated as a separate mode identity.
+CZone mode changes are treated as authoritative from the proprietary CZone mode transaction
+on PGN 65280: `27 99 <mode runtime ID> 00 00 24 F1 00`. Individual circuit state changes
+do not invalidate the active mode, because circuits can be overridden while a mode remains
+active. The following `0x40` CZone transaction-complete frame is logged when observed but is
+not treated as a separate mode identity.
 
 ### Startup Mode reconciliation (Alpha.42)
 
-CZone does not appear to periodically broadcast the selected Mode on the observed NMEA 2000 traffic. After a Signal K/plugin restart, Alpha.42 therefore collects the repeating PGN 65284 circuit-status observations and performs a **fuzzy best-match** against the Mode action targets decoded from the ZCF. Expected-ON actions are weighted more heavily than expected-OFF actions because OFF-heavy Mode definitions are otherwise ambiguous. The plugin requires a clear score margin before publishing the inferred Mode.
+CZone does not appear to periodically broadcast the selected Mode on the observed NMEA 2000
+traffic. After a Signal K/plugin restart, Alpha.42 therefore collects the repeating PGN 65284
+circuit-status observations and performs a **fuzzy best-match** against the Mode action targets
+decoded from the ZCF. Expected-ON actions are weighted more heavily than expected-OFF actions
+because OFF-heavy Mode definitions are otherwise ambiguous. The plugin requires a clear score
+margin before publishing the inferred Mode.
 
-This reconciliation is deliberately startup-only. Once a Mode has been inferred, or once an authoritative `F1` Mode activation is observed, individual circuit changes never invalidate the active Mode. This allows a user to turn a circuit on/off manually while remaining in the selected CZone Mode.
-
+This reconciliation is deliberately startup-only. Once a Mode has been inferred, or once an
+authoritative `F1` Mode activation is observed, individual circuit changes never invalidate the
+active mode. This allows a user to turn a circuit on/off manually while remaining in the selected
+CZone Mode.
 
 ### Alpha.44 network configuration read
 
-The plugin can explicitly request the complete CZone configuration from the network. This is **not** performed during Signal K startup. The webapp action **Read From Network and Save** sends the observed CZone configuration-read request on PGN 65290, receives/reassembles the CZone DataBlock transfer on PGN 130816, acknowledges each DataBlock on PGN 65291, validates the reconstructed configuration with the existing ZCF parser, and saves the resulting raw configuration bytes using a `.czone.net` extension.
+The plugin can explicitly request the complete CZone configuration from the network. This is
+**not** performed during Signal K startup. The webapp action **Read From Network and Save** sends
+the observed CZone configuration-read request on PGN 65290, receives/reassembles the CZone
+DataBlock transfer on PGN 130816, acknowledges each DataBlock on PGN 65291, validates the
+reconstructed configuration with the existing ZCF parser, and saves the resulting raw
+configuration bytes using a `.czone.net` extension.
 
-The saved filename is based on the vessel name embedded in the received configuration when available, then Signal K's `vessels.self.name`, then the generic `CZone Network` name. A JSON sidecar records acquisition metadata. The network read is exposed in the **Signal K Plugin Config** panel, not as a normal runtime webapp action. After a successful read, the resulting `.czone.net` file appears in the Plugin Config source selector and can be explicitly selected for future startup. Switching back to **Use installed/uploaded ZCF** is also available there. This keeps Signal K startup on the fast local-file path and avoids a multi-second CZone configuration transfer on every restart.
+The saved filename is based on the vessel name embedded in the received configuration when
+available, then Signal K's `vessels.self.name`, then the generic `CZone Network` name. A JSON
+sidecar records acquisition metadata. The network read is exposed in the **Signal K Plugin Config**
+panel, not as a normal runtime webapp action. After a successful read, the resulting `.czone.net`
+file appears in the Plugin Config source selector and can be explicitly selected for future startup.
+Switching back to **Use installed/uploaded ZCF** is also available there. This keeps Signal K startup
+on the fast local-file path and avoids a multi-second CZone configuration transfer on every restart.
 
-`.czone.net` is intentionally used instead of `.zcf`: the plugin has reconstructed the CZone configuration byte stream from the network, but does not claim to produce an officially sanctioned CZone configuration file.
+`.czone.net` is intentionally used instead of `.zcf`: the plugin has reconstructed the CZone
+configuration byte stream from the network, but does not claim to produce an officially sanctioned
+CZone configuration file.
