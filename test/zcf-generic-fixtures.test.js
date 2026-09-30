@@ -23,6 +23,8 @@ for (const [filename, vesselName, expectedCount] of cases) {
 }
 
 const testBench = zcf.load(path.join(__dirname, 'fixtures', 'TestBench.zcf'))
+assert(testBench.modules.some(m => m.module === 0x01 && m.name === 'Output Interface'))
+assert(testBench.modules.some(m => m.module === 0x18 && m.name === 'Buzzer'))
 assert.deepStrictEqual(
   testBench.circuits.map(c => [c.name, c.module, c.channel, c.zcfCircuitId]),
   [

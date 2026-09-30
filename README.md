@@ -10,6 +10,10 @@ CZone ZCF configuration.
 > CZone configurations, but some control mappings remain provisional until they are
 > exercised against the corresponding live CZone system.
 
+## Beta 13
+
+Beta 13 changes CZone control command ownership based on controlled Bench testing. The command byte-5 value is now selected automatically as the first unused CZone module/dipswitch address in the loaded ZCF; the plugin no longer hard-codes a device identity such as `0x08`, `0x24`, or `0x65`. Circuit and Mode control frames use trailer `0x08`. This prevents the approximately 10-second expiry observed when a `0x00` trailer is used with a device identity that is not live on the bus. The selected command device ID is reported in plugin status/logs.
+
 ## Beta 12 / current status
 
 Beta 12 is primarily a documentation release following the Beta 7–11 UI and

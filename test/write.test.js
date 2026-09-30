@@ -6,7 +6,7 @@ const os = require('os')
 const path = require('path')
 const pluginFactory = require('../index')
 
-const zcfSource = '/mnt/data/SugarShack-20260927-01.zcf'
+const zcfSource = path.join(__dirname, 'fixtures', 'SugarShack-20260927-01.zcf')
 if (!fs.existsSync(zcfSource)) {
   console.log('Step 3 write tests skipped: live ZCF not present')
   process.exit(0)
@@ -36,27 +36,27 @@ const galleyState = 'electrical.czone.Galley_Lights.switch.state'
 const galleyBrightness = 'electrical.czone.Galley_Lights.switch.brightness'
 const pianoState = 'electrical.czone.Piano_Light.switch.state'
 
-assert.strictEqual(putHandlers.size, 106 + 13 + 1)
+assert.strictEqual(putHandlers.size, 108 + 13 + 1)
 assert(putHandlers.has(galleyState))
 assert(putHandlers.has(galleyBrightness))
 assert(putHandlers.has(pianoState))
 
 let result = putHandlers.get(galleyBrightness)('vessels.self', galleyBrightness, 0.5, () => {})
 assert.deepStrictEqual(result, { state: 'COMPLETED', statusCode: 200 })
-assert(emitted.at(-1).endsWith(',27,99,1b,00,32,08,fc,00'))
+assert(emitted.at(-1).endsWith(',27,99,1b,00,32,05,fc,08'))
 assert(emitted.length >= 3)
-assert(emitted.at(-3).endsWith(',27,99,1b,00,00,24,f5,00'))
-assert(emitted.at(-2).endsWith(',27,99,1b,00,00,24,43,00'))
+assert(emitted.at(-3).endsWith(',27,99,1b,00,00,05,f5,08'))
+assert(emitted.at(-2).endsWith(',27,99,1b,00,00,05,43,08'))
 
 result = putHandlers.get(galleyState)('vessels.self', galleyState, true, () => {})
 assert.deepStrictEqual(result, { state: 'COMPLETED', statusCode: 200 })
-assert(emitted.at(-2).endsWith(',27,99,1b,00,00,24,f5,00'))
-assert(emitted.at(-1).endsWith(',27,99,1b,00,00,24,43,00'))
+assert(emitted.at(-2).endsWith(',27,99,1b,00,00,05,f5,08'))
+assert(emitted.at(-1).endsWith(',27,99,1b,00,00,05,43,08'))
 
 result = putHandlers.get(pianoState)('vessels.self', pianoState, true, () => {})
 assert.deepStrictEqual(result, { state: 'COMPLETED', statusCode: 200 })
-assert(emitted.at(-2).endsWith(',27,99,35,00,00,24,f1,00'))
-assert(emitted.at(-1).endsWith(',27,99,35,00,00,24,40,00'))
+assert(emitted.at(-2).endsWith(',27,99,35,00,00,05,f1,08'))
+assert(emitted.at(-1).endsWith(',27,99,35,00,00,05,40,08'))
 
 result = putHandlers.get(galleyBrightness)('vessels.self', galleyBrightness, 1.2, () => {})
 assert.strictEqual(result.statusCode, 400)
@@ -69,7 +69,7 @@ assert(putHandlers.has(modeActivePath))
 
 result = putHandlers.get(modeActivePath)('vessels.self', modeActivePath, 'nightCruising', () => {})
 assert.deepStrictEqual(result, { state: 'COMPLETED', statusCode: 200 })
-assert(emitted.at(-1).endsWith(',27,99,4d,00,00,24,f1,00'))
+assert(emitted.at(-1).endsWith(',27,99,4d,00,00,05,f1,08'))
 
 
 

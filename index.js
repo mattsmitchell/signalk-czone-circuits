@@ -134,12 +134,31 @@ module.exports = function (app) {
     if (typeof app.debug === 'function') app.debug(`[${PLUGIN_ID}] ${message}`)
   }
 
+
+  function selectCommandDeviceId (zcfMapping) {
+    const used = new Set((zcfMapping && zcfMapping.moduleAddresses) || [])
+    for (let id = 1; id <= 0xFE; id++) {
+      if (!used.has(id)) return id
+    }
+    throw new Error('No unused CZone device/dipswitch ID is available in the loaded ZCF')
+  }
+
+  function commandDeviceId () {
+    if (!mapping) throw new Error('No ZCF has been uploaded')
+    if (!Number.isInteger(mapping.commandDeviceId)) {
+      mapping.commandDeviceId = selectCommandDeviceId(mapping)
+      log(`Using CZone command device ID 0x${mapping.commandDeviceId.toString(16).padStart(2, '0')} (unused in loaded ZCF)`)
+    }
+    return mapping.commandDeviceId
+  }
+
   function loadConfiguredZcf () {
     if (!fs.existsSync(zcfPath())) {
       mapping = null
       return null
     }
     mapping = zcf.load(zcfPath())
+    mapping.commandDeviceId = selectCommandDeviceId(mapping)
     publishedCircuitValues.clear()
     runtimeState = new Map(mapping.circuits.map(c => [c.name, {
       state: null,
@@ -154,7 +173,7 @@ module.exports = function (app) {
       protocolCircuitId: c.protocolCircuitId,
       capabilities: c.capabilities,
     }]))
-    log(`Loaded ${mapping.circuits.length} circuits from ${mapping.fileName}${mapping.vesselName ? ` (vessel ${mapping.vesselName})` : ''}`)
+    log(`Loaded ${mapping.circuits.length} circuits from ${mapping.fileName}${mapping.vesselName ? ` (vessel ${mapping.vesselName})` : ''}; command device ID 0x${mapping.commandDeviceId.toString(16).padStart(2, '0')}`)
     for (const mode of mapping.modes) {
       const status = mode.truncated
         ? `TRUNCATED: parsed ${mode.parsedActionCount}/${mode.actionCount} actions`
@@ -301,7 +320,7 @@ module.exports = function (app) {
     requireSendingEnabled()
     const line = nmea.emitCzone(app, {
       src: 0,
-      data: czone.modeActivate(mode.runtimeId)
+      data: czone.modeActivate(mode.runtimeId, commandDeviceId(), 0x08)
     })
     // CZone's mode activation frame is the authoritative mode-change
     // transaction we can observe on the bus. Publish immediately on a local
@@ -368,22 +387,25 @@ module.exports = function (app) {
 
   function sendCircuitState (circuit, enabled) {
     const id = requireProtocolId(circuit)
+    const deviceId = commandDeviceId()
+    const trailer = 0x08
     if (circuit.capabilities.dimmer) {
       return emitCommandSequence(
         circuit,
-        enabled ? czone.dimmerOn(id, 0x24) : czone.dimmerOff(id, 0x24),
+        enabled ? czone.dimmerOn(id, deviceId, trailer) : czone.dimmerOff(id, deviceId, trailer),
         enabled ? 'ON' : 'OFF'
       )
     }
 
-    // Non-dimmable CZone circuits use F1/F2 with the 0x24 command parameter,
-    // followed by the 0x40 completion frame seen in the live CZone captures.
-    const parameter = 0x24
+    // Byte 5 identifies the CZone sending device/dipswitch. Do not use a
+    // circuit-specific hard-coded device ID. The final 0x08 trailer makes the
+    // command persistent instead of depending on the referenced device's
+    // live heartbeat.
     return emitCommandSequence(
       circuit,
       [
-        enabled ? czone.on(id, parameter) : czone.off(id, parameter),
-        czone.switchComplete(id, parameter)
+        enabled ? czone.on(id, deviceId, trailer) : czone.off(id, deviceId, trailer),
+        czone.switchComplete(id, deviceId, trailer)
       ],
       enabled ? 'ON' : 'OFF'
     )
@@ -400,9 +422,9 @@ module.exports = function (app) {
     // dimmable circuit on. If the authoritative 65284 state says OFF (or has
     // not been observed yet), reproduce the CZone ON sequence first.
     if (!state || state.state !== 'ON') {
-      commands.push(...czone.dimmerOn(requireProtocolId(circuit), 0x24))
+      commands.push(...czone.dimmerOn(requireProtocolId(circuit), commandDeviceId(), 0x08))
     }
-    commands.push(czone.level(requireProtocolId(circuit), percent, circuit.protocolParameter))
+    commands.push(czone.level(requireProtocolId(circuit), percent, commandDeviceId(), 0x08))
     return emitCommandSequence(circuit, commands, `LEVEL ${percent}%${commands.length > 1 ? ' + ON' : ''}`)
   }
 
@@ -1002,7 +1024,7 @@ module.exports = function (app) {
           nmeaReady,
           nmeaReadyAt,
           lastNmeaOutput,
-          zcf: mapping ? { fileName: mapping.fileName, fileSize: mapping.fileSize, vesselName: mapping.vesselName || null, circuits: mapping.circuits.length, modes: mapping.modes.length, warnings: mapping.warnings } : null,
+          zcf: mapping ? { fileName: mapping.fileName, fileSize: mapping.fileSize, vesselName: mapping.vesselName || null, circuits: mapping.circuits.length, modes: mapping.modes.length, commandDeviceId: mapping.commandDeviceId, warnings: mapping.warnings } : null,
           configuration: { source: settings.configurationSource || 'installedZcf', networkConfigFile: settings.networkConfigFile || '', availableNetworkConfigs: listNetworkConfigs(), lastNetworkRead: lastNetworkConfig ? { ...lastNetworkConfig, blocks: undefined } : null },
           activeMode: activeMode ? { id: activeMode.id, runtimeId: activeMode.runtimeId, name: activeMode.name, slug: activeMode.slug, modeGroupId: activeMode.modeGroupId } : null
         })
@@ -1159,7 +1181,7 @@ module.exports = function (app) {
       router.post('/circuits/:name/on', (req, res) => {
         try {
           const circuit = circuitByName(req.params.name)
-          const data = czone.on(requireProtocolId(circuit), circuit.protocolParameter)
+          const data = czone.on(requireProtocolId(circuit), commandDeviceId(), 0x08)
           const line = emitCommand(circuit, data, 'ON')
           const state = runtimeState.get(circuit.name)
           res.json({ ok: true, circuit: circuit.name, line, state })
@@ -1169,7 +1191,7 @@ module.exports = function (app) {
       router.post('/circuits/:name/off', (req, res) => {
         try {
           const circuit = circuitByName(req.params.name)
-          const data = czone.off(requireProtocolId(circuit), circuit.protocolParameter)
+          const data = czone.off(requireProtocolId(circuit), commandDeviceId(), 0x08)
           const line = emitCommand(circuit, data, 'OFF')
           const state = runtimeState.get(circuit.name)
           res.json({ ok: true, circuit: circuit.name, line, state })
@@ -1180,7 +1202,7 @@ module.exports = function (app) {
         try {
           const circuit = circuitByName(req.params.name)
           const percent = Number(req.body && req.body.percent)
-          const data = czone.level(requireProtocolId(circuit), percent, circuit.protocolParameter)
+          const data = czone.level(requireProtocolId(circuit), percent, commandDeviceId(), 0x08)
           const line = emitCommand(circuit, data, `LEVEL ${Math.round(percent)}%`)
           const state = runtimeState.get(circuit.name)
           res.json({ ok: true, circuit: circuit.name, line, state })
