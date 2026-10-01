@@ -1,10 +1,11 @@
 'use strict'
 
 const assert = require('assert')
+const path = require('path')
 const fs = require('fs')
 const zcf = require('../lib/zcf')
 
-const zcfPath = '/mnt/data/TestBench.zcf'
+const zcfPath = path.join(__dirname, 'fixtures', 'TestBench.zcf')
 if (!fs.existsSync(zcfPath)) {
   console.log('Bench status tests skipped: TestBench.zcf not present')
   process.exit(0)
