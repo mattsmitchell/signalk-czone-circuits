@@ -12,12 +12,20 @@ Webapp
 Plugin config
 <img width="1280" height="1702" alt="Image" src="https://github.com/user-attachments/assets/0405b364-6e60-4bbe-b230-72adec323239" />
 
-**Current release:** `0.1.0-beta.19`
+**Current release:** `0.1.0-beta.21`
 
 > **Beta status:** This project is an active reverse-engineering and field-testing
 > project. The ZCF parser has been broadened and regression-tested against multiple
 > CZone configurations, but some control mappings remain provisional until they are
 > exercised against the corresponding live CZone system.
+
+## Beta 21
+
+Beta 21 keeps the structural ZCF parser and status/output mapping from Beta 20 and makes the regression corpus self-contained and portable. Tests now resolve the checked-in ZCF fixtures relative to the repository instead of depending on `/mnt/data` paths from the development environment.
+
+The supplied fixture corpus is the parser regression source of truth for this project and is intended to stay aligned with the CZone parser fixtures used by `signalk-czone`. The binary `.zcf` files are checked in under `test/fixtures/` so both plugins can exercise the same real-world configurations.
+
+The category decoder also adds the empirically identified **Alarms** sub-category bit (`0x00800000`). Unknown category bits remain exposed as raw values rather than being guessed.
 
 ## Beta 16
 
