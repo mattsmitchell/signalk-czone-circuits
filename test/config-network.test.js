@@ -4,11 +4,12 @@ const assert = require('assert')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
+const path = require('path')
 const pluginFactory = require('../index')
 const czone = require('../lib/czone')
 const zcf = require('../lib/zcf')
 
-const sourceZcf = '/mnt/data/SugarShack-20260927-01.zcf'
+const sourceZcf = path.join(__dirname, 'fixtures', 'SugarShack-20260927-01.zcf')
 if (!fs.existsSync(sourceZcf)) {
   console.log('Network configuration tests skipped: live ZCF not present')
   process.exit(0)
