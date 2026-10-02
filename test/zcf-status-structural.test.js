@@ -4,7 +4,6 @@ const assert = require('assert')
 const path = require('path')
 const { fixturePath } = require('./canonical-fixtures')
 const zcf = require('../lib/zcf')
-const { fixturePath } = require('./canonical-fixtures')
 
 async function main() {
 const mapping = zcf.load(await fixturePath('SugarShack-20260927-01.zcf'))
