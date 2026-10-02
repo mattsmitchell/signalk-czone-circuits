@@ -6,7 +6,7 @@ const os = require('os')
 const path = require('path')
 const pluginFactory = require('../index')
 
-const zcfSource = '/mnt/data/TestBench.zcf'
+const zcfSource = path.join(__dirname, 'fixtures', 'TestBench.zcf')
 if (!fs.existsSync(zcfSource)) {
   console.log('TestBench state tests skipped: TestBench.zcf not present')
   process.exit(0)

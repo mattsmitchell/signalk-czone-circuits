@@ -46,3 +46,9 @@ assert.deepStrictEqual(
 )
 
 console.log('Generic ZCF fixture parser tests passed')
+
+const selCitron = zcf.load(path.join(__dirname, 'fixtures', 'Sel-Citron-02.04.25.zcf'))
+const alarmCircuits = selCitron.circuits.filter(c => c.subCategories.includes('Alarms'))
+assert.strictEqual(alarmCircuits.length, 1)
+assert.strictEqual(alarmCircuits[0].name, 'Bilge Buzzer - Port')
+assert.strictEqual(alarmCircuits[0].zcf.category.unknownSubCategoryBits & 0x00800000, 0)
