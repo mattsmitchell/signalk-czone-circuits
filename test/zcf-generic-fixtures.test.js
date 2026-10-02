@@ -1,9 +1,10 @@
 'use strict'
 
 const assert = require('assert')
-const path = require('path')
+const { fixturePath } = require('./canonical-fixtures')
 const zcf = require('../lib/zcf')
 
+async function main() {
 const cases = [
   ['SugarShack-20260927-01.zcf', 'Sugar Shack-20260927-01', 110],
   ['TestBench.zcf', 'Test Bench', 6],
@@ -14,7 +15,7 @@ const cases = [
 ]
 
 for (const [filename, vesselName, expectedCount] of cases) {
-  const mapping = zcf.load(path.join(__dirname, 'fixtures', filename))
+  const mapping = zcf.load(await fixturePath(filename))
   assert.strictEqual(mapping.vesselName, vesselName, `${filename}: vessel/config name`)
   assert.strictEqual(mapping.circuits.length, expectedCount, `${filename}: circuit count`)
   assert(mapping.circuits.every(c => c.module === null || c.module >= 0), `${filename}: circuit module value`)
@@ -22,12 +23,12 @@ for (const [filename, vesselName, expectedCount] of cases) {
   assert(mapping.circuits.every(c => c.name.length > 0), `${filename}: circuit names`)
 }
 
-const testBench = zcf.load(path.join(__dirname, 'fixtures', 'TestBench.zcf'))
+const testBench = zcf.load(await fixturePath('TestBench.zcf'))
 assert(testBench.modules.some(m => m.module === 0x01 && m.name === 'Output Interface'))
 assert.strictEqual(testBench.modules.length, 4)
 assert(testBench.modules.some(m => m.module === 0x10 && m.name === 'Display'))
 assert(testBench.modules.find(m => m.module === 0x10).rawNameLength === 0x87)
-const sugar = zcf.load(path.join(__dirname, 'fixtures', 'SugarShack-20260927-01.zcf'))
+const sugar = zcf.load(await fixturePath('SugarShack-20260927-01.zcf'))
 for (const [module, name] of [[0x1d, 'B&G PortHelm'], [0x07, 'B&G Screen'], [0x27, 'B&G StbdHelm'], [0xf8, 'ACOI 01 Stbd Aft'], [0x80, 'STBD Helm KeyPad']]) {
   assert(sugar.modules.some(m => m.module === module && m.name === name), `Sugar Shack module 0x${module.toString(16)} ${name} must be parsed`)
 }
@@ -47,8 +48,13 @@ assert.deepStrictEqual(
 
 console.log('Generic ZCF fixture parser tests passed')
 
-const selCitron = zcf.load(path.join(__dirname, 'fixtures', 'Sel-Citron-02.04.25.zcf'))
+const selCitron = zcf.load(await fixturePath('Sel-Citron-02.04.25.zcf'))
 const alarmCircuits = selCitron.circuits.filter(c => c.subCategories.includes('Alarms'))
 assert.strictEqual(alarmCircuits.length, 1)
 assert.strictEqual(alarmCircuits[0].name, 'Bilge Buzzer - Port')
 assert.strictEqual(alarmCircuits[0].zcf.category.unknownSubCategoryBits & 0x00800000, 0)
+
+
+}
+
+main().catch(err => { console.error(err); process.exitCode = 1 })

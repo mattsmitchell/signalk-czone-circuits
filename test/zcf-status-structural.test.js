@@ -2,10 +2,11 @@
 
 const assert = require('assert')
 const path = require('path')
+const { fixturePath } = require('./canonical-fixtures')
 const zcf = require('../lib/zcf')
 
-const fixture = path.join(__dirname, 'fixtures', 'SugarShack-20260927-01.zcf')
-const mapping = zcf.load(fixture)
+async function main() {
+const mapping = zcf.load(await fixturePath('SugarShack-20260927-01.zcf'))
 
 assert.deepStrictEqual(mapping.statusTable && mapping.statusTable.format, 'status-table-bit-record')
 assert.strictEqual(mapping.statusTable.recordCount, 102)
@@ -58,3 +59,8 @@ assert.strictEqual(timedPort.zcf.statusSource, 'status-output')
 assert.strictEqual(timedStbd.zcf.statusSource, 'status-output')
 
 console.log('Virtual ZCF output-to-status mapping tests passed')
+
+
+}
+
+main().catch(err => { console.error(err); process.exitCode = 1 })
