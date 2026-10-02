@@ -1,11 +1,12 @@
 'use strict'
 
 const assert = require('assert')
-const fs = require('fs')
-const path = require('path')
+const { fixturePath } = require('./canonical-fixtures')
 const zcf = require('../lib/zcf')
 const czone = require('../lib/czone')
 const signalk = require('../lib/signalk')
+
+async function main() {
 
 assert.deepStrictEqual([...czone.on(0x65)], [0x27,0x99,0x65,0x00,0x00,0x08,0xF1,0x08])
 assert.deepStrictEqual([...czone.off(0x65)], [0x27,0x99,0x65,0x00,0x00,0x08,0xF2,0x08])
@@ -18,9 +19,8 @@ assert.deepStrictEqual([...czone.dimmerOff(0x45, 0x24)[2]], [0x27,0x99,0x45,0x00
 assert.deepStrictEqual([...czone.switchComplete(0x2e, 0x24)], [0x27,0x99,0x2e,0x00,0x00,0x24,0x40,0x08])
 assert.deepStrictEqual([...czone.level(0x65, 50)], [0x27,0x99,0x65,0x00,0x32,0x08,0xFC,0x08])
 assert.deepStrictEqual([...czone.level(0x45, 75, 0x24)], [0x27,0x99,0x45,0x00,0x4B,0x24,0xFC,0x08])
-const currentZcfPath = path.join(__dirname, 'fixtures', 'SugarShack-20260927-01.zcf')
-if (fs.existsSync(currentZcfPath)) {
-  const current = zcf.load(currentZcfPath)
+const current = zcf.load(await fixturePath('SugarShack-20260927-01.zcf'))
+  
   const currentStatusMappingCount = current.circuits.filter(c => Number.isInteger(c.statusModule) && Number.isInteger(c.statusBit)).length
   assert.strictEqual(currentStatusMappingCount, 100)
   assert.deepStrictEqual(
@@ -41,6 +41,8 @@ if (fs.existsSync(currentZcfPath)) {
       [0,300,0,0,0,0,0,0,0,0,0,100,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     ]
   )
-}
 
 console.log('CZone circuit skeleton tests passed')
+}
+
+main().catch(err => { console.error(err); process.exitCode = 1 })
