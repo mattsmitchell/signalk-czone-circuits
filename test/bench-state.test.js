@@ -4,7 +4,6 @@ const assert = require('assert')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const path = require('path')
 const pluginFactory = require('../index')
 
 const zcfSource = path.join(__dirname, 'fixtures', 'TestBench.zcf')
