@@ -1,9 +1,10 @@
 'use strict'
 
 const assert = require('assert')
-const path = require('path')
+const { fixturePath } = require('./canonical-fixtures')
 const zcf = require('../lib/zcf')
 
+async function main() {
 const fixture = path.join(__dirname, 'fixtures', 'SugarShack-20260927-01.zcf')
 const mapping = zcf.load(fixture)
 
@@ -58,3 +59,8 @@ assert.strictEqual(timedPort.zcf.statusSource, 'status-output')
 assert.strictEqual(timedStbd.zcf.statusSource, 'status-output')
 
 console.log('Virtual ZCF output-to-status mapping tests passed')
+
+
+}
+
+main().catch(err => { console.error(err); process.exitCode = 1 })
