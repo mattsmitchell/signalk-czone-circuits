@@ -1,6 +1,7 @@
 'use strict'
 
 const assert = require('assert')
+const path = require('path')
 const { fixturePath } = require('./canonical-fixtures')
 const zcf = require('../lib/zcf')
 const { fixturePath } = require('./canonical-fixtures')
