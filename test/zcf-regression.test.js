@@ -1,10 +1,10 @@
 'use strict'
 const assert = require('assert')
-const path = require('path')
+const { fixturePath } = require('./canonical-fixtures')
 const zcf = require('../lib/zcf')
 
-const file = path.join(__dirname, 'fixtures', 'SugarShack-20260927-01.zcf')
-const mapping = zcf.load(file)
+async function main() {
+const mapping = zcf.load(await fixturePath('SugarShack-20260927-01.zcf'))
 
 const bimini = mapping.circuits.find(c => c.name === 'Bimini Lights')
 const deck = mapping.circuits.find(c => c.name === 'Deck Spot Lights')
@@ -59,3 +59,8 @@ for (const [name, master, sub] of categoryCases) {
   assert(Number.isInteger(circuit.zcf.category.subCategoryBits), `${name} raw subcategory bitmap`)
   assert(Number.isInteger(circuit.zcf.category.categoryWord), `${name} raw category word`)
 }
+
+
+}
+
+main().catch(err => { console.error(err); process.exitCode = 1 })
