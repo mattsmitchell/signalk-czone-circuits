@@ -735,16 +735,16 @@ module.exports = function (app) {
   function finishConfigTransfer (buffer, target, source) {
     const state = configTransfer
     if (!state) return
-    const temp = path.join(configDir, `.network-${Date.now()}.zcf.tmp`)
     try {
       fs.mkdirSync(networkConfigDir(), { recursive: true })
-      fs.writeFileSync(temp, buffer)
-      const next = zcf.load(temp)
+      // Transport/reassembly has already produced the complete ZCF Buffer.
+      // Decode it directly; persistence is a separate concern.
+      const next = zcf.parse(buffer)
       const vesselName = next.vesselName || signalKVesselName() || 'CZone Network'
       const filename = `${safeNetworkFilename(vesselName)}-${networkTimestamp()}.czone.net`
       const targetPath = path.join(networkConfigDir(), filename)
       if (fs.existsSync(targetPath)) throw new Error(`Network configuration file already exists: ${filename}`)
-      fs.renameSync(temp, targetPath)
+      fs.writeFileSync(targetPath, buffer)
       const metadata = {
         format: 'signalk-czone-network-config',
         version: 1,
@@ -772,7 +772,6 @@ module.exports = function (app) {
       lastNetworkConfig = state
       log(`CZone network configuration read complete: ${filename} (${buffer.length} bytes, ${next.circuits.length} circuits, ${next.modes.length} modes)`)
     } catch (err) {
-      try { if (fs.existsSync(temp)) fs.unlinkSync(temp) } catch (_) {}
       failConfigTransfer(err.message)
     }
   }
