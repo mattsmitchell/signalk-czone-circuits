@@ -1,10 +1,9 @@
 'use strict'
 const assert = require('assert')
-const path = require('path')
+const { fixturePath } = require('./canonical-fixtures')
 const zcf = require('../lib/zcf')
 
-const fixtures = path.join(__dirname, 'fixtures')
-
+async function main() {
 // The structural parser must not depend on the old E8 03 signature scan.
 // Every valid circuit record is shown; only Modes and logic blocks are excluded.
 // Duplicate names and zero-control circuits are not visibility filters.
@@ -18,13 +17,13 @@ const expectedCounts = new Map([
 ])
 
 for (const [file, count] of expectedCounts) {
-  const mapping = zcf.load(path.join(fixtures, file))
+  const mapping = zcf.load(await fixturePath(file))
   assert.strictEqual(mapping.circuits.length, count, `${file}: structural circuit count`)
   assert(mapping.circuits.every(c => c.module === null || c.module === null || c.module >= 0), `${file}: no circuit may use module 0`)
   assert(mapping.circuits.every(c => c.name.length > 0), `${file}: circuit names`)
 }
 
-const meitaki = zcf.load(path.join(fixtures, 'Meitaki-07.04.25.zcf'))
+const meitaki = zcf.load(await fixturePath('Meitaki-07.04.25.zcf'))
 const audible = meitaki.circuits.find(c => c.name === 'Audible Alarm')
 assert(audible, 'Meitaki Audible Alarm must remain visible')
 assert(meitaki.circuits.filter(c => c.name === 'Audible Alarm').length >= 1)
@@ -37,12 +36,12 @@ for (const [file, names] of [
   ['Meitaki-07.04.25.zcf', ['Cabin Fans', 'Cockpit USB']],
   ['SugarShack-20260927-01.zcf', ['Solar Arch Port Charger CHG', 'Solar Arch Stbd Charger CHG', 'Solar Port Charger CHG', 'Solar Stbd Charger CHG']]
 ]) {
-  const mapping = zcf.load(path.join(fixtures, file))
+  const mapping = zcf.load(await fixturePath(file))
   for (const name of names) assert(mapping.circuits.some(c => c.name === name), `${file}: ${name} must remain`)
 }
 
 // Control-circuit metadata is decoded but does not control visibility.
-const sugar = zcf.load(path.join(fixtures, 'SugarShack-20260927-01.zcf'))
+const sugar = zcf.load(await fixturePath('SugarShack-20260927-01.zcf'))
 const fuelXfer = sugar.circuits.find(c => c.name === 'Fuel Xfer')
 assert(fuelXfer && fuelXfer.zcf.controls.length === 1)
 assert.strictEqual(fuelXfer.zcf.controls[0].controlModule, 'All Display Interfaces')
@@ -51,3 +50,8 @@ const wireless = sugar.circuits.find(c => c.name === '200L Fridge Light')
 assert(wireless && wireless.zcf.controls.some(c => c.controlModule === 'COI 05 Stbd Aft Under Fridge'))
 
 console.log('Structural ZCF fixture regression tests passed')
+
+
+}
+
+main().catch(err => { console.error(err); process.exitCode = 1 })
