@@ -1,5 +1,7 @@
 # signalk-czone-circuits
 
+**NOTE:  This project was rolled into https://github.com/mattsmitchell/signalk-czone** 
+
 Signalk CZone circuit control using dynamically parsed ZCF configuration and Signalk NMEA 2000 output  The PGNs have been reverse engineered, so its a best guess effort.  
 
 Requirements: CZone digital switching installed, and NMEA interface capable of reading and writing from the NMEA interface.
