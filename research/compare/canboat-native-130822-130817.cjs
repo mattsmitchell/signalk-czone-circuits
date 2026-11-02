@@ -69,3 +69,20 @@ assert.equal(acFields.page,3)
 assert.equal(acFields.current0,8)
 assert.equal(acFields.opaque0,0x3412)
 console.log(JSON.stringify({kind:'synthetic native PGN definition vectors',dc:dcFields,ac:acFields}))
+
+const captures=require('./sugarshack-captured-current.json')
+for(const capture of captures){
+  const bytes=Buffer.from(capture.hex,'hex')
+  assert.equal(bytes.length,28,capture.source+': captured payload length')
+  const values=parse(capture.pgn,bytes)
+  assert.equal(values.module,capture.module,capture.source+': module')
+  assert.equal(values.page,capture.page,capture.source+': page')
+  for(let i=0;i<8;i++){
+    const current=bytes[4+i*3]*(capture.pgn===130817?0.2:0.1)
+    assert(Math.abs(values['current'+i]-current)<1e-8,capture.source+': slot '+i+' current')
+    assert.equal(values[(capture.pgn===130817?'opaque':'rawLevel')+i],bytes.readUInt16LE(5+i*3),capture.source+': secondary '+i)
+  }
+  if(capture.currentSlot6!==undefined)assert.equal(values.current6,capture.currentSlot6)
+  if(capture.currentSlot5!==undefined)assert.equal(values.current5,capture.currentSlot5)
+  console.log(JSON.stringify({kind:'SugarShack captured payload native decode',source:capture.source,pgn:capture.pgn,module:values.module,page:values.page,fields:values}))
+}
