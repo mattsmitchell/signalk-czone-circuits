@@ -48,6 +48,8 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm test
+      - name: Replay captured Control X Plus CAN frames against current beta
+        run: node circuits/research/compare/raw-replay.cjs
       - name: Inventory fixtures and CANboat exports
         if: always()
         run: |
