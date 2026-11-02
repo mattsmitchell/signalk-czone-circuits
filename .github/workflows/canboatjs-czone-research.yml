@@ -99,3 +99,25 @@ jobs:
       - name: Validate unmodified upstream YAML database
         working-directory: canboat
         run: keel/keel check
+
+  keel-czone-definitions:
+    name: CANboat Keel CZone candidate definitions
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out research testbed
+        uses: actions/checkout@v4
+        with:
+          path: circuits
+          persist-credentials: false
+      - name: Check out upstream CANboat (isolated and read only upstream)
+        uses: actions/checkout@v4
+        with:
+          repository: canboat/canboat
+          path: canboat
+          persist-credentials: false
+      - name: Stage CZone YAML definitions in temporary checkout
+        run: python3 circuits/research/compare/stage-upstream-keel.py canboat
+      - name: Run Keel check against proposed CZone definitions
+        working-directory: canboat
+        run: keel/keel check
