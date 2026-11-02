@@ -50,6 +50,8 @@ jobs:
           npm test
       - name: Replay captured Control X Plus CAN frames against current beta
         run: node circuits/research/compare/raw-replay.cjs
+      - name: Replay same frames through canboatjs beta.5
+        run: node circuits/research/compare/canboat-beta5.cjs
       - name: Inventory fixtures and CANboat exports
         if: always()
         run: |
