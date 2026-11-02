@@ -89,6 +89,8 @@ After the manufacturer header, byte 2 identifies the module and byte 3 selects t
 The 130822 level/state code is retained as a wire-level UINT16; its state and percentage mapping above is the active plugin's interpretation, rather than a calibrated physical unit. Current values are 0.1 A/count in the existing plugin and match the captured payload layout. Check `unit: A` spelling against keel's field-type/unit rules before submitting.
 
 ### PGN 130825 (27 bytes, 8 × 22-bit records)
+
+The eight non-byte-aligned records each describe one physical output channel, ordered by slot (channel = page × 8 + slot). Each record has an 11-bit **output current** in 0.1 A/count followed by an 11-bit **output level code**. Zero level means OFF; 1000 is treated as full output (100%) by the Signal K application. The level is a wire code, not a current or voltage. In the active application, current is only published when the output level is nonzero. This description applies to every record; numbered field identifiers are necessary only to represent the eight fixed slots in the current proposed YAML.
 ```yaml
 - id: module
   name: Module
@@ -100,72 +102,88 @@ The 130822 level/state code is retained as a wire-level UINT16; its state and pe
   name: Reserved
   type: RESERVED
   bits: 8
-- id: currentRaw0
-  name: Raw Current 0
+- id: outputCurrent0
+  name: Output Current 0
   type: UINT16
   bits: 11
-- id: levelRaw0
-  name: Raw Level 0
+  resolution: 0.1
+  unit: A
+- id: outputLevelCode0
+  name: Output Level Code 0
   type: UINT16
   bits: 11
-- id: currentRaw1
-  name: Raw Current 1
+- id: outputCurrent1
+  name: Output Current 1
   type: UINT16
   bits: 11
-- id: levelRaw1
-  name: Raw Level 1
+  resolution: 0.1
+  unit: A
+- id: outputLevelCode1
+  name: Output Level Code 1
   type: UINT16
   bits: 11
-- id: currentRaw2
-  name: Raw Current 2
+- id: outputCurrent2
+  name: Output Current 2
   type: UINT16
   bits: 11
-- id: levelRaw2
-  name: Raw Level 2
+  resolution: 0.1
+  unit: A
+- id: outputLevelCode2
+  name: Output Level Code 2
   type: UINT16
   bits: 11
-- id: currentRaw3
-  name: Raw Current 3
+- id: outputCurrent3
+  name: Output Current 3
   type: UINT16
   bits: 11
-- id: levelRaw3
-  name: Raw Level 3
+  resolution: 0.1
+  unit: A
+- id: outputLevelCode3
+  name: Output Level Code 3
   type: UINT16
   bits: 11
-- id: currentRaw4
-  name: Raw Current 4
+- id: outputCurrent4
+  name: Output Current 4
   type: UINT16
   bits: 11
-- id: levelRaw4
-  name: Raw Level 4
+  resolution: 0.1
+  unit: A
+- id: outputLevelCode4
+  name: Output Level Code 4
   type: UINT16
   bits: 11
-- id: currentRaw5
-  name: Raw Current 5
+- id: outputCurrent5
+  name: Output Current 5
   type: UINT16
   bits: 11
-- id: levelRaw5
-  name: Raw Level 5
+  resolution: 0.1
+  unit: A
+- id: outputLevelCode5
+  name: Output Level Code 5
   type: UINT16
   bits: 11
-- id: currentRaw6
-  name: Raw Current 6
+- id: outputCurrent6
+  name: Output Current 6
   type: UINT16
   bits: 11
-- id: levelRaw6
-  name: Raw Level 6
+  resolution: 0.1
+  unit: A
+- id: outputLevelCode6
+  name: Output Level Code 6
   type: UINT16
   bits: 11
-- id: currentRaw7
-  name: Raw Current 7
+- id: outputCurrent7
+  name: Output Current 7
   type: UINT16
   bits: 11
-- id: levelRaw7
-  name: Raw Level 7
+  resolution: 0.1
+  unit: A
+- id: outputLevelCode7
+  name: Output Level Code 7
   type: UINT16
   bits: 11
 ``
-For 130825, current = rawCurrent × 0.1 A in the active plugin when rawLevel is nonzero. Observed rawLevel 1000 maps to 100% **in the application**, but preserve wire raw values upstream. Verify keel accepts non-byte-aligned `UINT16` with `bits: 11`; adjust using a supported numeric field type if needed. Confirm whether byte 4 is consistently reserved from additional captures.
+For 130825, outputCurrent is the wire current count scaled by 0.1 A/count; the active plugin suppresses current when outputLevelCode is zero. Observed rawLevel 1000 maps to 100% **in the application**, but preserve wire raw values upstream. Verify keel accepts non-byte-aligned `UINT16` with `bits: 11`; adjust using a supported numeric field type if needed. Confirm whether byte 4 is consistently reserved from additional captures.
 
 ## PGN 130817 — do not replace existing semantics yet
 
