@@ -198,3 +198,80 @@ Upstream `130817-bepMarineCzoneStatusExtended.yaml` already describes per-circui
 - For upstream, attach original raw fast-packet frames or provenance-backed samples under `samples/`, not just synthetic data.
 - In a CANboat checkout run `keel/keel check`, `make generated`, `make pr`. Commit all generated artifacts in lockstep; this research checkout has **not** run those commands.
 - Suggested draft PR title: `feat(bep): decode CZone DC and Control X Plus current tables`.
+
+
+## Repeating field support — verified against upstream YAML
+
+CANboat's current YAML supports an inline `- repeat:` entry containing
+`fields:`, with an optional `countField:` for count-driven repetition.
+See `database/pgns/129540-gnssSatsInView.yaml` and
+`database/pgns/130074-routeAndWpServiceWpListWpNamePosition.yaml`.
+The generated database also supports up to two repeating sets. These
+examples establish count-driven repetition, **not** that a fixed eightfold
+repetition without a count field is accepted by `keel check`. Since
+neither CZone payload carries a record-count byte, do not fabricate one.
+A candidate compact layout (needs keel validation) is:
+
+```yaml
+# After the three proprietary manufacturer preamble fields:
+- id: module
+  name: Module
+  type: UINT8
+- id: page
+  name: Page
+  type: UINT8
+- repeat:
+    fields:
+    - id: outputCurrent
+      name: Output Current
+      type: UINT8
+      resolution: 0.1
+      unit: A
+    - id: outputLevelCode
+      name: Output Level Code
+      type: UINT16
+```
+
+For 130825 the same two repeated fields would be 11-bit unsigned each,
+after the extra byte at payload offset 4. **Do not submit this compact
+form until keel's fixed-count behavior is tested**; explicit eightfold
+enumeration remains the safe fallback. Repetition changes generated
+field names, so downstream compatibility also needs checking.
+
+## Observed device and evidence attribution
+
+- **130825 — BEP/CZone Control X Plus:** Captured from Compass Rose
+  Control X Plus modules 1 and 2; module 1 page 0 channel 2 (Freezer)
+  measured raw current 31 (3.1 A) and level code 1000; module 2 page 0
+  channel 4 measured raw current 5 (0.5 A) and level code 1000.
+  These are actual captures.
+- **130822 — CZone DC/COI current-reporting modules:** Observed in
+  SugarShack CAN recordings (source addresses 5 and 6; module numbers
+  24 and 26, page 1 in retained fixtures). The available payloads do
+  **not** independently establish the physical product model from
+  source address alone. Describe as CZone DC/COI family unless device
+  identification/NAME records prove the exact model.
+- **130817 — CZone AC/ACOI candidate:** Observed in SugarShack recording
+  from source address 11, module 248, page 0, with zero current bytes.
+  This does **not** establish a specific AC hardware model or prove
+  nonzero-current resolution.
+
+## 130817 investigation / upstream conflict
+
+The existing CANboat variant `130817-bepMarineCzoneStatusExtended.yaml`
+describes byte 0 of each 3-byte record as **circuit ID**, and the
+following bytes as a packed 10-bit magnitude with sign and flags,
+possibly current in 0.1 A. Our existing AC decoder instead treats
+byte 0 as current at 0.2 A/count, with the following 16 bits opaque.
+These are materially different interpretations of the same bytes.
+Our all-zero SugarShack current bytes and repeating `0x0400` secondary
+words cannot decide between them.
+
+Before changing this upstream variant: identify the physical transmitter
+from address-claim/device information, correlate a known energized AC
+circuit with a **nonzero** first record byte, compare the proposed
+0.2 A/count against independently measured current, and check whether
+the purported circuit ID varies by record position or device. Also
+test whether module/page or other fields discriminate two legitimate
+130817 variants. Until then, retain the existing upstream interpretation
+and mark our AC current scaling provisional.
