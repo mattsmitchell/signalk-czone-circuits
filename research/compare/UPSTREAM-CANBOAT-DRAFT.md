@@ -12,6 +12,8 @@ All three already exist. Preserve the upstream proprietary preamble exactly: man
 ## Proposed replacement fields after the existing 16-bit manufacturer preamble
 
 ### PGN 130822 (28 bytes, 8 × 24-bit records)
+
+After the manufacturer header, byte 2 identifies the module and byte 3 selects the page. Each 3-byte record represents one consecutive output channel: channel = page × 8 + slot (slot 0–7). The first byte is measured output current in 0.1 A/count; the following little-endian UINT16 is an **output level/state code**, not a physical measurement. The code is 1024 = OFF (0%), 1025–2023 = DIMMED ((code − 1024)/10 percent), 2024 = ON (100%), and 2025–2048 = ON (100%) in the current plugin's interpretation. Codes outside these ranges are unknown. This mapping should be described once here, rather than repeated verbatim for every slot.
 ```yaml
 - id: module
   name: Module
@@ -24,75 +26,67 @@ All three already exist. Preserve the upstream proprietary preamble exactly: man
   type: UINT8
   resolution: 0.1
   unit: A
-- id: rawLevel0
-  name: Raw Level 0
+- id: outputLevelCode0
+  name: Output Level Code 0
   type: UINT16
-  description: Raw secondary word; 1024 OFF, 2024 ON, 1025..2023 dimmed in observed DC traffic
 - id: current1
   name: Current 1
   type: UINT8
   resolution: 0.1
   unit: A
-- id: rawLevel1
-  name: Raw Level 1
+- id: outputLevelCode1
+  name: Output Level Code 1
   type: UINT16
-  description: Raw secondary word; 1024 OFF, 2024 ON, 1025..2023 dimmed in observed DC traffic
 - id: current2
   name: Current 2
   type: UINT8
   resolution: 0.1
   unit: A
-- id: rawLevel2
-  name: Raw Level 2
+- id: outputLevelCode2
+  name: Output Level Code 2
   type: UINT16
-  description: Raw secondary word; 1024 OFF, 2024 ON, 1025..2023 dimmed in observed DC traffic
 - id: current3
   name: Current 3
   type: UINT8
   resolution: 0.1
   unit: A
-- id: rawLevel3
-  name: Raw Level 3
+- id: outputLevelCode3
+  name: Output Level Code 3
   type: UINT16
-  description: Raw secondary word; 1024 OFF, 2024 ON, 1025..2023 dimmed in observed DC traffic
 - id: current4
   name: Current 4
   type: UINT8
   resolution: 0.1
   unit: A
-- id: rawLevel4
-  name: Raw Level 4
+- id: outputLevelCode4
+  name: Output Level Code 4
   type: UINT16
-  description: Raw secondary word; 1024 OFF, 2024 ON, 1025..2023 dimmed in observed DC traffic
 - id: current5
   name: Current 5
   type: UINT8
   resolution: 0.1
   unit: A
-- id: rawLevel5
-  name: Raw Level 5
+- id: outputLevelCode5
+  name: Output Level Code 5
   type: UINT16
-  description: Raw secondary word; 1024 OFF, 2024 ON, 1025..2023 dimmed in observed DC traffic
 - id: current6
   name: Current 6
   type: UINT8
   resolution: 0.1
   unit: A
-- id: rawLevel6
-  name: Raw Level 6
+- id: outputLevelCode6
+  name: Output Level Code 6
   type: UINT16
-  description: Raw secondary word; 1024 OFF, 2024 ON, 1025..2023 dimmed in observed DC traffic
 - id: current7
   name: Current 7
   type: UINT8
   resolution: 0.1
   unit: A
-- id: rawLevel7
-  name: Raw Level 7
+- id: outputLevelCode7
+  name: Output Level Code 7
   type: UINT16
-  description: Raw secondary word; 1024 OFF, 2024 ON, 1025..2023 dimmed in observed DC traffic
 ``
-The 130822 secondary word is retained raw; level conversion is an application-level interpretation, not an independently calibrated physical unit. Current values are 0.1 A/count in the existing plugin and match the captured payload layout. Check `unit: A` spelling against keel's field-type/unit rules before submitting.
+The 130822 level/state code is retained as a wire-level UINT16; its state and percentage mapping above is the active plugin's interpretation, rather than a calibrated physical unit. Current values are 0.1 A/count in the existing plugin and match the captured payload layout. Check `unit: A` spelling against keel's field-type/unit rules before submitting.
 
 ### PGN 130825 (27 bytes, 8 × 22-bit records)
 ```yaml
