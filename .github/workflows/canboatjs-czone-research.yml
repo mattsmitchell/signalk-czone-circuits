@@ -79,3 +79,23 @@ jobs:
           name: czone-comparison-baseline
           path: comparison-results/
           if-no-files-found: warn
+
+  keel-upstream-baseline:
+    name: CANboat upstream keel baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out CANboat upstream (read only)
+        uses: actions/checkout@v4
+        with:
+          repository: canboat/canboat
+          path: canboat
+          persist-credentials: false
+      - name: Record upstream revision and toolchain
+        run: |
+          git -C canboat rev-parse HEAD
+          rustc --version
+          cargo --version
+      - name: Validate unmodified upstream YAML database
+        working-directory: canboat
+        run: keel/keel check
