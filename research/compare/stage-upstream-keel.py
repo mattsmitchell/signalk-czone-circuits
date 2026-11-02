@@ -51,9 +51,9 @@ for pgn, filename, desc, order in [
         for i in range(8):
             lines += [
                 f"- id: outputCurrentRaw{i}", f"  name: Output {i} Current Raw",
-                "  type: UINT16", "  bits: 11",
+                "  type: UNSIGNED_INTEGER", "  bits: 11",
                 f"- id: outputLevelRaw{i}", f"  name: Output {i} Level Raw",
-                "  type: UINT16", "  bits: 11",
+                "  type: UNSIGNED_INTEGER", "  bits: 11",
             ]
         # 27 bytes = 216 bits; header 40, eight 22-bit slots = 216
     else:
