@@ -35,3 +35,36 @@ Captured examples (Compass Rose):
 ## Canboat integration boundary
 
 The research workflow demonstrated canboatjs 4.0.0-beta.5 reassembling both captured 130825 packets and exposing manufacturer `BEP Marine` plus opaque proprietary bytes. Our CZone decoder supplies module, page, channel, current, and raw level. Proposed upstream work is a reusable field definition or extension, **not** Signal K-specific circuit naming, ZCF mapping, or UI behavior. Tests should assert exact reassembled bytes and scaled currents, while keeping unknown fields explicit.
+
+
+## Real-capture validation gate for 130822 and 130817
+
+The native Canboat tests for these two PGNs currently use **synthetic** 28-byte
+vectors. Passing them establishes that Canboat can apply the proposed field
+offsets and current resolutions; it does **not** independently establish that
+live CZone devices emit those layouts or that every secondary field is understood.
+
+To graduate either PGN to capture-validated, supply a source-labeled raw CAN
+fast-packet sequence (including the CAN ID, sequence/frame counter and every
+frame), or a source-labeled reassembled 28-byte payload together with its PGN,
+source address, device type, module/page, circuit/channel identity and an
+independent expected measurement. Retain original bytes and provenance.
+
+Validation requirements:
+
+1. Verify the complete payload is exactly 28 bytes and begins `27 99`.
+2. Check header ordering independently: 130822 module at byte 2, page at byte 3;
+   130817 page at byte 2, module at byte 3.
+3. Check each 3-byte slot: unsigned current byte at offset `4 + 3*slot`;
+   130822 current = count × 0.1 A; 130817 current = count × 0.2 A.
+4. For 130822, retain the 16-bit little-endian secondary value and compare
+   independently observed OFF, DIMMED and ON states before claiming a level
+   interpretation. For 130817, preserve these two bytes as opaque unless
+   independently characterized for the specific module type.
+5. Run the captured bytes through Canboat's native custom definition, compare
+   byte-exact reconstruction and expected field values, and record the test
+   source/provenance alongside the results. Do not substitute synthetic vectors
+   for this gate.
+
+Current status: **native parser passes synthetic vectors for both PGNs;
+real-capture validation remains pending.**
