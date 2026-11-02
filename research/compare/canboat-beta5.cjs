@@ -7,6 +7,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const assert = require('node:assert/strict')
 const { FromPgn } = require(path.resolve(__dirname, '../../../comparison/node_modules/@canboat/canboatjs'))
+const { decodeControlXPlusCurrentPacket } = require(path.resolve(__dirname, '../../../czone/lib/nmea2000.js'))
 
 const resultsDir = path.resolve(__dirname, '../../../comparison-results')
 const reference = JSON.parse(fs.readFileSync(path.join(resultsDir, 'raw-replay.json'), 'utf8'))
@@ -39,14 +40,34 @@ for (let i = 0; i < cases.length; i++) {
     rawData: msg.rawData || msg.data || null,
     input: msg.input || null
   }))
+  // Validate byte identity before interpreting any proprietary fields.
+  const raw = matchingPgn.length === 1 ? matchingPgn[0].rawData : null
+  const actualHex = Array.isArray(raw) ? Buffer.from(raw).toString('hex') : null
+  const payloadBytesMatch = actualHex === expected.payloadHex
+  assert.equal(matchingPgn.length, 1, expected.name + ': exactly one decoded PGN')
+  assert.equal(payloadBytesMatch, true, expected.name + ': CANboat raw bytes equal reference')
+  // Research adapter: applies our established CZone field decoder to CANboat's
+  // reassembled bytes. This is NOT yet a native Canboat PGN field definition.
+  const proprietary = decodeControlXPlusCurrentPacket(Buffer.from(raw))
+  assert(proprietary, expected.name + ': CZone proprietary payload decoded')
+  assert.equal(proprietary.module, expected.decoded.module)
+  assert.equal(proprietary.page, expected.decoded.page)
+  const slot = proprietary.slots.find(s => s.channel === expected.decoded.slot.channel)
+  assert(slot, expected.name + ': channel decoded')
+  assert.equal(slot.current, expected.decoded.slot.current)
+  assert.equal(slot.level, expected.decoded.slot.level)
   const result = {
     name: expected.name, pgn: expected.pgn,
     referencePayloadHex: expected.payloadHex,
     canboatMessageCount: matchingPgn.length,
+    payloadBytesMatch,
+    canboatPayloadHex: actualHex,
+    czoneAdapterDecoded: { module: proprietary.module, page: proprietary.page, slot: { ...slot, rawLevel: slot.level } },
+    nativeCanboatCircuitFields: false,
     canboatTransport: matchingPgn.length === 1 ? 'message-emitted' : 'no-single-message',
     canboatDecoded: decoded,
     errors,
-    note: 'A message emitted does not prove payload-byte equality. Inspect rawData/input and fields.'
+    note: 'Byte equality and CZone adapter fields asserted. Native Canboat PGN field definition remains to be implemented.'
   }
   report.push(result)
   console.log(JSON.stringify(result))
