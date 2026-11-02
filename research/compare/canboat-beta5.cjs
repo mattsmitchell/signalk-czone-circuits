@@ -6,9 +6,9 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const assert = require('node:assert/strict')
-const { FromPgn } = require(path.resolve(__dirname, '../../comparison/node_modules/@canboat/canboatjs'))
+const { FromPgn } = require(path.resolve(__dirname, '../../../comparison/node_modules/@canboat/canboatjs'))
 
-const resultsDir = path.resolve(__dirname, '../../comparison-results')
+const resultsDir = path.resolve(__dirname, '../../../comparison-results')
 const reference = JSON.parse(fs.readFileSync(path.join(resultsDir, 'raw-replay.json'), 'utf8'))
 const cases = [
   ['1DFF0902 40 1B 27 99 02 00 00 00','1DFF0902 41 40 1F 00 D0 17 00 00','1DFF0902 42 00 00 00 05 40 5F 00','1DFF0902 43 D0 07 00 00 00 00 00'],
