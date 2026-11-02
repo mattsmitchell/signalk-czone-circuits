@@ -337,3 +337,51 @@ note, subject to broader cross-device confirmation.
 Evidence is from the ZCF's binary device-name table and the wiring
 drawing; no inference of the physical DIP-to-module-ID algorithm
 is warranted from these six pairs alone.
+
+
+## New AC load capture — 2026-11-02 (nonzero 130817)
+
+User supplied `SugarShack-20261102-01-AcCurrent.CAN` after
+switching a water heater and a salon receptacle load. Binary YDVR v05
+capture independently reassembled: 29 complete PGN 130817 fast packets
+from source 11; all are 28 bytes with manufacturer header `27 99`,
+page 0, ZCF module ID `0xF8` (ACOI 01 Stbd Aft).
+
+Slot 1 (zero-based) first record byte: 0 (13 frames), 40 (1),
+41 (15). The associated 16-bit little-endian state code is 1024
+(OFF, 8 frames) or 2024 (ON, 21 frames). Slot 6 first byte: 0
+(25 frames), 7 (2), 8 (2); its secondary state code is 2024
+(ON, all 29 frames). Every other slot first byte is zero. Under
+the existing plugin's 0.2 A/count interpretation these are
+8.0–8.2 A and 1.4–1.6 A respectively.
+
+Crucially, these bytes **vary with applied AC load**, rather than
+remaining fixed circuit identifiers. This is strong evidence against
+the existing upstream 130817 explanation that the first byte of each
+record is a `circuit_id`. Also, the secondary UINT16 matches the
+DC 130822 OFF/ON codes 1024 and 2024 in the same capture.
+The file-order timeline has slot 1 ON code 2024 even during its
+initial zero-current interval; its state later changes to OFF 1024
+when current returns to zero. Slot 6 state remains ON 2024 even
+while measured current is zero. Thus **output enabled** and
+**nonzero load current** are distinct properties.
+
+The capture establishes current-byte correlation and shared state
+encoding, but **does not independently calibrate 0.2 A/count**
+without an external measurement or known electrical load wattage.
+Exact slot-to-load labels should be confirmed against switching
+timestamps or circuit mapping; do not infer from current magnitude
+alone. This new evidence supersedes the earlier all-zero-capture
+reason for treating AC record semantics as unresolved.
+
+Example reassembled AC payloads:
+- `279900f800000429e80700000400000400000400000400e80700e80f`
+  (slot 1 current raw 41, state ON)
+- `279900f800000400000400000400000400000400000400e80700e80f`
+  (slot 1 current raw 0, state OFF)
+- `279900f800000429e80700000400000400000400000407e80700e80f`
+  (slot 1 raw 41; slot 6 raw 7)
+
+The raw CAN file is supplied in conversation and **not committed**
+to either GitHub repository. Add a provenance-backed upstream
+sample only after confirming permission and desired fixture format.
