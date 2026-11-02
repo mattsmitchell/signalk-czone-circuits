@@ -6,7 +6,7 @@
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
-const nmea = require(path.resolve(__dirname, '../../czone/lib/nmea2000.js'))
+const nmea = require(path.resolve(__dirname, '../../../czone/lib/nmea2000.js'))
 
 const cases = [
   {
@@ -65,7 +65,7 @@ for (const testCase of cases) {
   })
 }
 
-const out = path.resolve(__dirname, '../../comparison-results')
+const out = path.resolve(__dirname, '../../../comparison-results')
 fs.mkdirSync(out, { recursive: true })
 fs.writeFileSync(path.join(out, 'raw-replay.json'), JSON.stringify(results, null, 2) + '\n')
 console.log(JSON.stringify(results, null, 2))
