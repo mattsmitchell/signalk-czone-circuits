@@ -53,6 +53,7 @@ for (let i = 0; i < frames.length; i++) {
   const msg = matches[0]
   assert.equal(Buffer.from(msg.rawData).toString('hex'),reference[i].payloadHex,'exact bytes')
   const values = msg.fields
+  console.log('NATIVE_DIAGNOSTIC', JSON.stringify({description:msg.description,id:msg.id,fields:values,errors:msg.errors}))
   assert(values,'native fields')
   const get = (id,name) => values[id] ?? values[name]
   assert.equal(get('module','Module'),reference[i].decoded.module,'module')
