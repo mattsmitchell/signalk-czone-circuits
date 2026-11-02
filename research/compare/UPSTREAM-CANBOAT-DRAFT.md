@@ -385,3 +385,30 @@ Example reassembled AC payloads:
 The raw CAN file is supplied in conversation and **not committed**
 to either GitHub repository. Add a provenance-backed upstream
 sample only after confirming permission and desired fixture format.
+
+
+## Independent AC current calibration and circuit identification
+
+The user confirmed an approximately 8 A, 110 V water heater
+(900 W rated element) and approximately 1.4 A, 110 V blender load
+on the salon receptacles during the 2026-11-02 capture.
+900 W / 110 V = 8.18 A, matching PGN 130817 slot 1 raw 41
+× 0.2 A = 8.2 A. Slot 6 raw 7 × 0.2 A = 1.4 A.
+This provides **independent corroboration of 0.2 A/count**.
+
+The read-only active repository's binary fixture
+`test/fixtures/SugarShack-20260927-01.zcf` has named ACOI
+output entries with module `0xF8`: `Water Heater Port`
+(channel 1, zero-based slot 1) and `Receptacles Salon`
+(channel 7, zero-based slot 6). The two changing slots in the
+live PGN 130817 capture therefore match the configured loads.
+These are **output channels/slots**, not the separately assigned
+CZone logical circuit IDs; preserve the latter from the parsed ZCF
+circuit model and wiring diagram, rather than conflating them.
+
+The upstream PGN 130817 candidate can now confidently describe
+eight records of `outputCurrent` (UINT8, resolution 0.2 A)
+and `outputLevelCode` (UINT16 little-endian, 1024 OFF /
+2024 ON observed). This directly contradicts the pre-existing
+unverified `circuit_id` interpretation. Validate YAML with keel
+and preserve generated-artifact compatibility before upstream PR.
