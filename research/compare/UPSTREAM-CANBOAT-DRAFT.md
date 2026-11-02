@@ -300,3 +300,40 @@ about the repeated three-byte records**, not the page or DIP-switch header.
 Both interpretations remain provisional pending nonzero/current-correlated
 capture evidence. Existing upstream `missing: [Fields, FieldLengths,
 Resolution]` already signals incomplete decoding.
+
+
+## SugarShack ZCF / CAN / wiring-diagram identity cross-check
+
+Verified directly against the **existing read-only active repository fixture**
+`test/fixtures/SugarShack-20260927-01.zcf`, the 130822 module IDs
+present in SugarShack CAN captures, and the user's one-page
+`Sugar Shack cZone circuits.pdf`. The binary ZCF's device table
+places the following module bytes immediately before the device names:
+
+| 130822 / ZCF module | ZCF device name | PDF location | PDF DIP SW |
+| --- | --- | --- | --- |
+| 0x12 (18) | COI 04 Under Nav. Station | Nav Station | 00010000 |
+| 0x14 (20) | COI 02 Port Aft Under Freezer | Port Aft | 01100000 |
+| 0x16 (22) | COI 06 Stbd Engine Room | Stbd Engine Room | 01010000 |
+| 0x18 (24) | COI 01 Port Engine Room | Port Engine Room | 10100000 |
+| 0x1A (26) | COI 05 Stbd Aft Under Fridge | Stbd Aft | 10010000 |
+| 0x1C (28) | COI 03 Mast Foot | Mast Foot | 11100000 |
+
+The ZCF's COI ordinal numbering is **not** the same as the PDF's
+COI ordinal numbering. Location-based matching is therefore essential.
+The CAN byte is the ZCF module ID, **not** a direct physical DIP
+bitmask or a simple transformation of the printed DIP bits.
+
+The ZCF also lists `ACOI 01 Stbd Aft` with preceding device identifier
+`0xF8`, matching the PGN 130817 captured header `27 99 00 F8`.
+The PDF labels the AC Output Interface as Stbd Aft with DIP
+`10000000`. This resolves the **device identity** of the 130817
+transmitter as the SugarShack ACOI, but does not establish the scaling
+or semantics of its per-channel records. Upstream PGN 130817's
+`dipswitch` field is therefore likely misnamed if it represents
+this byte; suggest `moduleId` (or `deviceId`) with a compatibility
+note, subject to broader cross-device confirmation.
+
+Evidence is from the ZCF's binary device-name table and the wiring
+drawing; no inference of the physical DIP-to-module-ID algorithm
+is warranted from these six pairs alone.
