@@ -30,10 +30,12 @@ const parser=new FromPgn({returnNonMatches:true,includeRawData:true,onPropertyVa
 function parse(pgn,bytes) {
   const src=9, prio=7, dst=255
   const results=[]
-  // Coalesced Actisense format allows native field decoding to be tested
-  // independently from transport, already covered by 130825 raw CAN tests.
-  const line=['2026-11-02T00:00:00.000Z',prio,pgn,src,dst,bytes.length,...bytes.map(x=>x.toString(16).padStart(2,'0'))].join(',')
-  parser.parseString(line,(err,msg)=>{if(err)throw Error(String(err));if(msg)results.push(msg)})
+  // Supply a complete reassembled payload directly; transport reassembly is
+  // independently tested with captured Control X Plus CAN frames.
+  parser.parsePgnData({pgn,src,prio,dst,timestamp:'2026-11-02T00:00:00.000Z'},bytes.length,bytes,true,(err,msg)=>{
+    if(err)throw Error(String(err))
+    if(msg)results.push(msg)
+  })
   assert.equal(results.length,1,'one decoded PGN')
   const msg=results[0]
   assert.equal(msg.id,'czone'+pgn+'Research','native custom definition selected')
