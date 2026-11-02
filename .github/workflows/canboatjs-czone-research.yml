@@ -2,6 +2,8 @@ name: CZone protocol comparison (research only)
 
 on:
   workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -38,6 +40,10 @@ jobs:
           npm init -y
           npm install --no-audit --no-fund @canboat/canboatjs@4.0.0-beta.5
           npm ls @canboat/canboatjs
+      - name: Replay captured Control X Plus CAN frames against current beta
+        run: node circuits/research/compare/raw-replay.cjs
+      - name: Replay same frames through canboatjs beta.5
+        run: node circuits/research/compare/canboat-beta5.cjs
       - name: Run current plugin tests
         working-directory: czone
         run: |
@@ -48,10 +54,6 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm test
-      - name: Replay captured Control X Plus CAN frames against current beta
-        run: node circuits/research/compare/raw-replay.cjs
-      - name: Replay same frames through canboatjs beta.5
-        run: node circuits/research/compare/canboat-beta5.cjs
       - name: Inventory fixtures and CANboat exports
         if: always()
         run: |
