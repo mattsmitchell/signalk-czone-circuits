@@ -46,6 +46,8 @@ jobs:
         run: node circuits/research/compare/canboat-beta5.cjs
       - name: Decode Control X Plus with native Canboat custom PGN definition
         run: node circuits/research/compare/canboat-native-130825.cjs
+      - name: Decode DC and AC with native Canboat custom PGN definitions
+        run: node circuits/research/compare/canboat-native-130822-130817.cjs
       - name: Run current plugin tests
         working-directory: czone
         run: |
