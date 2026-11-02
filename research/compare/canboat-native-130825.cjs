@@ -19,6 +19,8 @@ function field(id, name, offset, width, resolution) {
   fields.push(result)
 }
 field('manufacturerCodeRaw', 'Manufacturer Code Raw', 0, 16)
+// Compete with the built-in BEP proprietary definition using a signature match.
+fields[0].Match = 0x9927
 field('module', 'Module', 16, 8)
 field('page', 'Page', 24, 8)
 field('reserved', 'Reserved', 32, 8)
