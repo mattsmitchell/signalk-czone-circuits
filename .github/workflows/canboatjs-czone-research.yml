@@ -121,3 +121,13 @@ jobs:
       - name: Run Keel check against proposed CZone definitions
         working-directory: canboat
         run: keel/keel check
+      - name: Install CANboat generation prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xsltproc libxml2-utils python3-venv
+      - name: Generate CANboat artifacts and run golden tests
+        working-directory: canboat
+        run: make generated
+      - name: Check upstream PR compatibility contract
+        working-directory: canboat
+        run: make pr
