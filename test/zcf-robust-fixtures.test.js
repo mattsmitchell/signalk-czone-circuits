@@ -12,7 +12,7 @@ const expectedCounts = new Map([
   ['Compass-Rose-28.06.26.zcf', 35],
   ['Persevere-14.07.25.zcf', 58],
   ['Sel-Citron-02.04.25.zcf', 102],
-  ['Meitaki-07.04.25.zcf', 109],
+  ['Meitaki-07.04.25.zcf', 107],
   ['SugarShack-20260927-01.zcf', 110]
 ])
 

@@ -1,0 +1,133 @@
+name: CZone protocol comparison (research only)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out research repository
+        uses: actions/checkout@v4
+        with:
+          path: circuits
+          persist-credentials: false
+      - name: Check out current beta (read only)
+        uses: actions/checkout@v4
+        with:
+          repository: mattsmitchell/signalk-czone
+          ref: main
+          path: czone
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Record revisions
+        run: |
+          echo "circuits: $(git -C circuits rev-parse HEAD)"
+          echo "czone: $(git -C czone rev-parse HEAD)"
+      - name: Install research decoder
+        run: |
+          mkdir -p comparison
+          cd comparison
+          npm init -y
+          npm install --no-audit --no-fund @canboat/canboatjs@4.0.0-beta.5
+          npm ls @canboat/canboatjs
+      - name: Replay captured Control X Plus CAN frames against current beta
+        run: node circuits/research/compare/raw-replay.cjs
+      - name: Replay same frames through canboatjs beta.5
+        run: node circuits/research/compare/canboat-beta5.cjs
+      - name: Decode Control X Plus with native Canboat custom PGN definition
+        run: node circuits/research/compare/canboat-native-130825.cjs
+      - name: Decode DC and AC with native Canboat custom PGN definitions
+        run: node circuits/research/compare/canboat-native-130822-130817.cjs
+      - name: Run current plugin tests
+        working-directory: czone
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+      - name: Run predecessor tests
+        working-directory: circuits
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+      - name: Inventory fixtures and CANboat exports
+        if: always()
+        run: |
+          mkdir -p comparison-results
+          { echo "## CZone comparison baseline"; echo;
+            echo "Predecessor SHA: $(git -C circuits rev-parse HEAD)";
+            echo "Current beta SHA: $(git -C czone rev-parse HEAD)";
+            echo "CANboatjs requested version: 4.0.0-beta.5"; echo;
+            echo "### Fixture inventory"; echo;
+            find circuits/test czone/test -type f | sort;
+            echo; echo "### CANboatjs package entry points"; echo;
+            node -e "const p=require('./comparison/node_modules/@canboat/canboatjs/package.json');console.log(JSON.stringify({version:p.version,main:p.main,exports:p.exports},null,2))";
+          } > comparison-results/baseline.md
+          cat comparison-results/baseline.md
+      - name: Upload baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: czone-comparison-baseline
+          path: comparison-results/
+          if-no-files-found: warn
+
+  keel-upstream-baseline:
+    name: CANboat upstream keel baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out CANboat upstream (read only)
+        uses: actions/checkout@v4
+        with:
+          repository: canboat/canboat
+          path: canboat
+          persist-credentials: false
+      - name: Record upstream revision and toolchain
+        run: |
+          git -C canboat rev-parse HEAD
+          rustc --version
+          cargo --version
+      - name: Validate unmodified upstream YAML database
+        working-directory: canboat
+        run: keel/keel check
+
+  keel-czone-definitions:
+    name: CANboat Keel CZone candidate definitions
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out research testbed
+        uses: actions/checkout@v4
+        with:
+          path: circuits
+          persist-credentials: false
+      - name: Check out upstream CANboat (isolated and read only upstream)
+        uses: actions/checkout@v4
+        with:
+          repository: canboat/canboat
+          path: canboat
+          persist-credentials: false
+      - name: Stage CZone YAML definitions in temporary checkout
+        run: python3 circuits/research/compare/stage-upstream-keel.py canboat
+      - name: Run Keel check against proposed CZone definitions
+        working-directory: canboat
+        run: keel/keel check
+      - name: Install CANboat generation prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xsltproc libxml2-utils python3-venv
+      - name: Generate CANboat artifacts and run golden tests
+        working-directory: canboat
+        run: make generated
+      - name: Check upstream PR compatibility contract
+        working-directory: canboat
+        run: make pr
