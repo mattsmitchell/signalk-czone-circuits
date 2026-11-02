@@ -65,5 +65,15 @@ for pgn, filename, desc, order in [
                 f"- id: outputStateCode{i}", f"  name: Output {i} State and Level Code",
                 "  type: UINT16",
             ]
+    captures = {
+        130817: ("279900f800000400000400000400000400000400000400e80700e80f", 11, ["page: 0", "moduleId: 248", "outputCurrent0: 0"]),
+        130822: ("2799180101e8070000040000040000040000040000049be807000004", 5, ["moduleId: 24", "page: 1", "outputCurrent0: 0.1", "outputStateCode0: 2024", "outputCurrent6: 15.5"]),
+        130825: ("279902000000401f00d017000000000005405f00d0070000000000", 2, ["moduleId: 2", "page: 0"]),
+    }
+    payload, source, expected = captures[pgn]
+    assert len(bytes.fromhex(payload)) == (27 if pgn == 130825 else 28)
+    raw = "2026-11-02-00:00:00.000,6," + str(pgn) + "," + str(source) + ",255," + str(len(payload)//2) + "," + ",".join(payload[i:i+2] for i in range(0,len(payload),2))
+    lines += ["samples:", '- raw: "' + raw + '"', "  expects:"]
+    lines += ["    " + value for value in expected]
     (base / filename).write_text("\n".join(lines) + "\n")
     print(f"Staged PGN {pgn} definition: {filename}")
