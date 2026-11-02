@@ -275,3 +275,28 @@ the purported circuit ID varies by record position or device. Also
 test whether module/page or other fields discriminate two legitimate
 130817 variants. Until then, retain the existing upstream interpretation
 and mark our AC current scaling provisional.
+
+
+## 130817 DIP-switch clarification (device identity)
+
+CZone modules have a **binary DIP-switch setting assigned to each sending
+device on the CZone network**. This is a device identifier, not a circuit
+identifier, circuit current, or channel number. The upstream 130817 variant
+already labels the fourth payload byte `dipswitch` (after the 16-bit
+manufacturer preamble and `page` byte); our AC/ACOI candidate labels the
+same byte `module`. These are compatible descriptions of the header's
+role, not competing evidence that the byte is a measurement.
+
+For the SugarShack 130817 payload `27 99 00 f8 ...`, the header is
+manufacturer/BEP, page 0, DIP-switch value 0xF8 (248 as an unsigned byte).
+**Do not infer physical DIP-switch positions or device model** from that
+numeric byte without an independent device mapping. In the upstream
+contribution, prefer `dipswitch` or `deviceDipSwitch` for this field
+rather than generic `module`, and state that it identifies the sender's
+configured CZone network identity.
+
+The disagreement with the current upstream PGN 130817 definition is **only
+about the repeated three-byte records**, not the page or DIP-switch header.
+Both interpretations remain provisional pending nonzero/current-correlated
+capture evidence. Existing upstream `missing: [Fields, FieldLengths,
+Resolution]` already signals incomplete decoding.
