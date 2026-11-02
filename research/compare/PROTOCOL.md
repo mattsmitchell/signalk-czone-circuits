@@ -30,7 +30,7 @@ Captured examples (Compass Rose):
 - Module 2, page 0, channel 4: rawCurrent 5, **0.5 A**, rawLevel **1000**.
 - Module 1, page 0, channel 2: rawCurrent 31, **3.1 A**; the replay also reports rawLevel **1000**.
 
-**Important:** `rawLevel = 1000` is a wire value, **not 1000%**. The documented 130822 offset encoding (`1024` OFF, `2024` 100%) is **not interchangeable** with 130825's 11-bit field. For 130825, OFF at 0 is established by the decoder/tests; any percentage conversion or full-scale interpretation requires separate validation. Expose `rawLevel` without asserting percent until validated.
+**Important:** `rawLevel = 1000` is a wire value, **not 1000%**. The documented 130822 offset encoding (`1024` OFF, `2024` 100%) is **not interchangeable** with 130825's 11-bit field. For 130825, OFF at 0 is established by the decoder/tests. **The active Signal K plugin currently publishes normalized brightness as `clamp(rawLevel, 0, 1000) / 1000`, so rawLevel 1000 maps to 100% in the application.** This is an implemented application scaling convention, distinct from the separately validated 130822 wire encoding. Keep the original `rawLevel` in protocol output and document the plugin normalization explicitly; further device-level calibration of intermediate 130825 levels remains separate.
 
 ## Canboat integration boundary
 
